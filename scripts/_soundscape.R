@@ -435,7 +435,7 @@ exclude <- CN.data.raw.ed2[CN.data.raw.ed2$AATotal <= .001, "path2file"]
 #
 CN.data.raw.ed2 <- CN.data.raw.ed2[!CN.data.raw.ed2$path2file %in% exclude,]
 
-write.csv(CN.data.raw.ed2, "AcousticIndex_102022_v3.csv", na = "NA", row.names = F)
+write.csv(CN.data.raw.ed2, "data/AcousticIndex_102022_v3.csv", na = "NA", row.names = F)
 
 #rm(list= ls()[!(ls() %in% c("CN.data.raw.ed2"))])
 #gc()
