@@ -22,23 +22,96 @@ library(cowplot)
 library(TTR)
 
 
+
+CN.data.raw.ed2 <- read.csv("data/AcousticIndex_102022_v3.csv", header = T)
+CN.location <- read.csv("data/pontos_soundscape.csv", header = T)
 # reordering columns
-#CN.data.raw.ed2 <- read.csv("AcousticIndex_102022_v3.csv", header = T)
 CN.data.raw.ed2 <- CN.data.raw.ed2[,c(1:7,43,8:42,44)]
 
 #### exploratory ####
 
-CN.data <- CN.data.raw
+CN.data <- CN.data.raw.ed2
 
-CN.data <- CN.data %>% 
-  mutate_at(vars(ID:Min), factor) %>%
-  mutate(Date = parse_date_time(sub(".*_", "", CN.data$ldt.index), orders = "%Y%m%d%H%M")) %>% 
-  mutate(Local=fct_relevel(Local,paste0("CN", seq(1:14))))
+## checking
+#head(CN.data);tail(CN.data)
+#str(CN.data)
+#summary(CN.data)
+
+CN.data <- CN.data %>%
+             mutate(Date = parse_date_time(sub(".*_", "", CN.data$ldt.index), orders = "%Y%m%d%H%M")) %>% 
+             mutate(Local=fct_relevel(Local,paste0("CN", seq(1:14)))) %>% 
+             mutate(time_period = ifelse(as.numeric(as.character(Min)) >= 21 & as.numeric(as.character(Min)) <= 56, "dawn",
+                                         ifelse(as.numeric(as.character(Min)) >= 57 & as.numeric(as.character(Min)) <= 92, "day",
+                                                ifelse(as.numeric(as.character(Min)) >= 93 | as.numeric(as.character(Min)) <= 128, "dusk", "night")))) %>% 
+             mutate_at(vars(ID:Min, time_period), factor)
 
 str(CN.data)
 
 #### between minutes by points ####
-dir.create("exploratory")
+dir.create("results")
+
+
+# Audio sampling by point after removal of recordings with noise only
+sampling.overview <- CN.data %>% 
+                       group_by(Local, Year) %>% 
+                       summarise(Start_Date = min(Date),
+                                 End_Date = max(Date),
+                                 Count = n()) %>% 
+                       mutate(N_days = End_Date - Start_Date) %>% 
+                       left_join(CN.location) %>% 
+                       ungroup()
+
+# reordering columns
+sampling.overview <- sampling.overview[,c(1,7:9,2:4,6,5)]
+
+# saving
+write.csv(sampling.overview, "results/sampling_by_point_by_year.csv", row.names = F)
+
+
+
+
+
+
+
+
+
+#Compute summary statistics by groups - count, min, max, mean, sd:
+overview <- CN.data %>% 
+              group_by(Local, Year) %>%
+              summarise(Count = n(),
+                        H.Min = min(H, na.rm = TRUE),
+                        H.Max = max(H, na.rm = TRUE),
+                        H.Mean = mean(H, na.rm = TRUE),
+                        H.sd = sd(H, na.rm = TRUE),
+                        BGN.Min = min(BGN, na.rm = TRUE),
+                        BGN.Max = max(BGN, na.rm = TRUE),
+                        BGN.Mean = mean(BGN, na.rm = TRUE),
+                        BGN.sd = sd(BGN, na.rm = TRUE),
+                        S2N.Min = min(S2N, na.rm = TRUE),
+                        S2N.Max = max(S2N, na.rm = TRUE),
+                        S2N.Mean = mean(S2N, na.rm = TRUE),
+                        S2N.sd = sd(S2N, na.rm = TRUE),
+                        NPeak.Min = min(NPeak, na.rm = TRUE),
+                        NPeak.Max = max(NPeak, na.rm = TRUE),
+                        NPeak.Mean = mean(NPeak, na.rm = TRUE),
+                        NPeak.sd = sd(NPeak, na.rm = TRUE),
+                        AA.Min = min(AA, na.rm = TRUE),
+                        AA.Max = max(AA, na.rm = TRUE),
+                        AA.Mean = mean(AA, na.rm = TRUE),
+                        AA.sd = sd(AA, na.rm = TRUE),
+                        ADI.Min = min(ADI, na.rm = TRUE),
+                        ADI.Max = max(ADI, na.rm = TRUE),
+                        ADI.Mean = mean(ADI, na.rm = TRUE),
+                        ADI.sd = sd(ADI, na.rm = TRUE),
+                        AEI.Min = min(AEI, na.rm = TRUE),
+                        AEI.Max = max(AEI, na.rm = TRUE),
+                        AEI.Mean = mean(AEI, na.rm = TRUE),
+                        AEI.sd = sd(AEI, na.rm = TRUE)) %>% 
+              ungroup() #%>% 
+#pivot_longer(Count:AEI.sd, names_to = "Index summary", values_to = "value")
+
+write.csv(overview, "exploratory/descriptive.csv", row.names = F)
+
 
 #Visualize your data
 ggplot(CN.data, aes(Min, H))+
@@ -46,43 +119,6 @@ ggplot(CN.data, aes(Min, H))+
   scale_x_discrete(breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", ""))+
   facet_wrap(~Local, ncol = 2)
 
-
-#Compute summary statistics by groups - count, min, max, mean, sd:
-overview <- CN.data %>% 
-  group_by(Local, Year) %>%
-  summarise(Count = n(),
-            H.Min = min(H, na.rm = TRUE),
-            H.Max = max(H, na.rm = TRUE),
-            H.Mean = mean(H, na.rm = TRUE),
-            H.sd = sd(H, na.rm = TRUE),
-            BGN.Min = min(BGN, na.rm = TRUE),
-            BGN.Max = max(BGN, na.rm = TRUE),
-            BGN.Mean = mean(BGN, na.rm = TRUE),
-            BGN.sd = sd(BGN, na.rm = TRUE),
-            S2N.Min = min(S2N, na.rm = TRUE),
-            S2N.Max = max(S2N, na.rm = TRUE),
-            S2N.Mean = mean(S2N, na.rm = TRUE),
-            S2N.sd = sd(S2N, na.rm = TRUE),
-            NPeak.Min = min(NPeak, na.rm = TRUE),
-            NPeak.Max = max(NPeak, na.rm = TRUE),
-            NPeak.Mean = mean(NPeak, na.rm = TRUE),
-            NPeak.sd = sd(NPeak, na.rm = TRUE),
-            AA.Min = min(AA, na.rm = TRUE),
-            AA.Max = max(AA, na.rm = TRUE),
-            AA.Mean = mean(AA, na.rm = TRUE),
-            AA.sd = sd(AA, na.rm = TRUE),
-            ADI.Min = min(ADI, na.rm = TRUE),
-            ADI.Max = max(ADI, na.rm = TRUE),
-            ADI.Mean = mean(ADI, na.rm = TRUE),
-            ADI.sd = sd(ADI, na.rm = TRUE),
-            AEI.Min = min(AEI, na.rm = TRUE),
-            AEI.Max = max(AEI, na.rm = TRUE),
-            AEI.Mean = mean(AEI, na.rm = TRUE),
-            AEI.sd = sd(AEI, na.rm = TRUE)) %>% 
-  ungroup() #%>% 
-#pivot_longer(Count:AEI.sd, names_to = "Index summary", values_to = "value")
-
-write.csv(overview, "exploratory/descriptive.csv", row.names = F)
 
 
 #Compute one-way ANOVA test
