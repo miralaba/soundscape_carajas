@@ -7,29 +7,34 @@ memory.limit(1000000)
 library(tidyverse)
 library(dplyr)
 library(lubridate)
-library(scales)
-library(multcomp)
-library(multcompView)
-library(emmeans)
-library(MASS)
-library(fitdistrplus)
-library(lme4)
-library(glmmTMB)
-library(car)
-library(MuMIn)
 library(ggplot2)
-library(cowplot)
-library(TTR)
+library(RColorBrewer)
+library(Hmisc)
+library(corrplot)
+#library(scales)
+#library(multcomp)
+#library(multcompView)
+#library(emmeans)
+#library(MASS)
+#library(fitdistrplus)
+#library(lme4)
+#library(glmmTMB)
+#library(car)
+#library(MuMIn)
+#library(cowplot)
+#library(TTR)
 
 
-
+# soundscape index
 CN.data.raw.ed2 <- read.csv("data/AcousticIndex_102022_v3.csv", header = T)
-CN.location <- read.csv("data/pontos_soundscape.csv", header = T)
 # reordering columns
 CN.data.raw.ed2 <- CN.data.raw.ed2[,c(1:7,43,8:42,44)]
 
-#### exploratory ####
+# location and environmental data
+CN.location <- read.csv("data/pontos_soundscape.csv", header = T)
 
+#### exploratory ####
+# copy
 CN.data <- CN.data.raw.ed2
 
 ## checking
@@ -37,12 +42,17 @@ CN.data <- CN.data.raw.ed2
 #str(CN.data)
 #summary(CN.data)
 
+# transforming:
+# adding Date column; 
+# sorting sites from CN1 to CN14;
+# adding time period category variable;
+# and converting columns to factors
 CN.data <- CN.data %>%
              mutate(Date = parse_date_time(sub(".*_", "", CN.data$ldt.index), orders = "%Y%m%d%H%M")) %>% 
              mutate(Local=fct_relevel(Local,paste0("CN", seq(1:14)))) %>% 
-             mutate(time_period = ifelse(as.numeric(as.character(Min)) >= 21 & as.numeric(as.character(Min)) <= 56, "dawn",
-                                         ifelse(as.numeric(as.character(Min)) >= 57 & as.numeric(as.character(Min)) <= 92, "day",
-                                                ifelse(as.numeric(as.character(Min)) >= 93 | as.numeric(as.character(Min)) <= 128, "dusk", "night")))) %>% 
+             mutate(time_period = ifelse(as.numeric(as.character(Min)) >= 39 & as.numeric(as.character(Min)) <= 50, "dawn",
+                                         ifelse(as.numeric(as.character(Min)) >= 51 & as.numeric(as.character(Min)) <= 110, "day",
+                                                ifelse(as.numeric(as.character(Min)) >= 111 & as.numeric(as.character(Min)) <= 122, "dusk", "night")))) %>% 
              mutate_at(vars(ID:Min, time_period), factor)
 
 str(CN.data)
@@ -57,15 +67,337 @@ sampling.overview <- CN.data %>%
                        summarise(Start_Date = min(Date),
                                  End_Date = max(Date),
                                  Count = n()) %>% 
-                       mutate(N_days = End_Date - Start_Date) %>% 
+                       mutate(N_days = as.numeric(End_Date - Start_Date)) %>% 
                        left_join(CN.location) %>% 
                        ungroup()
 
 # reordering columns
 sampling.overview <- sampling.overview[,c(1,7:9,2:4,6,5)]
+# obs:
+# Locals CN11, CN12, CN13 and CN14 need check the number of days for 2022 sampling
+# these points started record in april, stoped and then re-started in may
+sampling.overview[sampling.overview$Local=="CN11" & sampling.overview$Year==2022,"N_days"] <- 7
+sampling.overview[sampling.overview$Local=="CN12" & sampling.overview$Year==2022,"N_days"] <- 8
+sampling.overview[sampling.overview$Local=="CN13" & sampling.overview$Year==2022,"N_days"] <- 8
+sampling.overview[sampling.overview$Local=="CN14" & sampling.overview$Year==2022,"N_days"] <- 8
+
 
 # saving
 write.csv(sampling.overview, "results/sampling_by_point_by_year.csv", row.names = F)
+
+
+## correlogram
+png("results/correlograms.png", width = 1920, height = 1920, units = "px", bg = "transparent")
+par(mfrow = c(5, 5))
+
+# frequency bin 1, dawn
+corrplot(cor(CN.data[CN.data$time_period=="dawn", grep("fbin1", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="dawn", grep("fbin1", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 1, day
+corrplot(cor(CN.data[CN.data$time_period=="day", grep("fbin1", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="day", grep("fbin1", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 1, dusk
+corrplot(cor(CN.data[CN.data$time_period=="dusk", grep("fbin1", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="dusk", grep("fbin1", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 1, night
+corrplot(cor(CN.data[CN.data$time_period=="night", grep("fbin1", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="night", grep("fbin1", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 1, total
+corrplot(cor(CN.data[, grep("fbin1", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[, grep("fbin1", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 2, dawn
+corrplot(cor(CN.data[CN.data$time_period=="dawn", grep("fbin2", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="dawn", grep("fbin2", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 2, day
+corrplot(cor(CN.data[CN.data$time_period=="day", grep("fbin2", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="day", grep("fbin2", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 2, dusk
+corrplot(cor(CN.data[CN.data$time_period=="dusk", grep("fbin2", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="dusk", grep("fbin2", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 2, night
+corrplot(cor(CN.data[CN.data$time_period=="night", grep("fbin2", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="night", grep("fbin2", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 2, total
+corrplot(cor(CN.data[, grep("fbin2", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[, grep("fbin2", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 3, dawn
+corrplot(cor(CN.data[CN.data$time_period=="dawn", grep("fbin3", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="dawn", grep("fbin3", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 3, day
+corrplot(cor(CN.data[CN.data$time_period=="day", grep("fbin3", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="day", grep("fbin3", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 3, dusk
+corrplot(cor(CN.data[CN.data$time_period=="dusk", grep("fbin3", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="dusk", grep("fbin3", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 3, night
+corrplot(cor(CN.data[CN.data$time_period=="night", grep("fbin3", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="night", grep("fbin3", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 3, total
+corrplot(cor(CN.data[, grep("fbin3", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[, grep("fbin3", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 4, dawn
+corrplot(cor(CN.data[CN.data$time_period=="dawn", grep("fbin4", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="dawn", grep("fbin4", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 4, day
+corrplot(cor(CN.data[CN.data$time_period=="day", grep("fbin4", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="day", grep("fbin4", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 4, dusk
+corrplot(cor(CN.data[CN.data$time_period=="dusk", grep("fbin4", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="dusk", grep("fbin4", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 4, night
+corrplot(cor(CN.data[CN.data$time_period=="night", grep("fbin4", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="night", grep("fbin4", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# frequency bin 4, total
+corrplot(cor(CN.data[, grep("fbin4", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[, grep("fbin4", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# total frequency, dawn
+corrplot(cor(CN.data[CN.data$time_period=="dawn", grep("Total", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="dawn", grep("Total", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# total frequency, day
+corrplot(cor(CN.data[CN.data$time_period=="day", grep("Total", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="day", grep("Total", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# total frequency, dusk
+corrplot(cor(CN.data[CN.data$time_period=="dusk", grep("Total", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="dusk", grep("Total", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+# total frequency, night
+corrplot(cor(CN.data[CN.data$time_period=="night", grep("Total", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.pos = "n", cl.pos = "n",
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[CN.data$time_period=="night", grep("Total", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+dev.off()
+###
+# total frequency, total
+png("results/correlogram_total.png", width = 960, height = 960, units = "px", bg = "transparent")
+
+corrplot(cor(CN.data[, grep("Total", names(CN.data))], method = "spearman", use = "pairwise.complete.obs"),
+         method = "color", order = "alphabet", col = brewer.pal(n = 8, name = "RdBu"), type = "lower",
+         mar = c(0, 1, 0, 0), 
+         number.font = 3, number.cex = 3,
+         addCoef.col = "black",
+         tl.col = "black", tl.srt = 90, tl.pos = "ld", tl.cex = 2, cl.pos = "r", cl.cex = 2,
+         # combine with significance level
+         p.mat = rcorr(as.matrix(CN.data[, grep("Total", names(CN.data))]), type = "spearman")$P, 
+         sig.level = 0.05, insig = "blank",
+         diag = F)
+
+dev.off()
+
+
+
+
 
 
 
