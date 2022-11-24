@@ -411,7 +411,7 @@ dev.off()
 # creating data frame
 
 local.diff <- data.frame(Index = rep(c("H", "BGN", "AA", "ADI", "AEI"), 25),
-                                frequency.bin = rep(rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-21.1"), each=5), 5),
+                                frequency.bin = rep(rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each=5), 5),
                                 time.period = rep(c("Total", "Dawn", "Day", "Dusk", "Night"), each = 25),
                                 effect.size = NA, n.sig = NA)
 
@@ -2241,9 +2241,44 @@ local.diff$n.sig[125] <- as.numeric(CN.data %>%
                                              count())
 
 
-write.csv(local.diff, "results/localdiff.csv", row.names = F)
+#write.csv(local.diff, "results/localdiff.csv", row.names = F)
+#checking
+str(local.diff)
+
+png("results/localdiff.png", width = 1920, height = 1920, units = "px", bg = "transparent")
+
+local.diff <- local.diff %>% 
+                 mutate(Index=factor(Index, levels = c("AA", "ADI", "AEI", "BGN", "H")),
+                        frequency.bin=factor(frequency.bin, levels = c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1")),
+                        time.period=factor(time.period, levels = c("Dawn", "Day", "Dusk", "Night", "Total")))
+  
+  
+local.diff.hline <- local.diff[local.diff$frequency.bin=="Total", ]
+  
+ 
+local.diff %>%  
+  ggplot(aes(frequency.bin, n.sig, colour = effect.size))+
+  geom_point(aes(size=10))+
+  geom_hline(aes(local.diff.hline, yintercept=n.sig), linetype='dashed') +
+  scale_y_continuous(limits = c(0, 91), breaks = c(0, 30, 60, 91)) +
+  scale_color_gradient("Effect size", low = "#F4A582", high = "#831529", na.value = NA)+
+  guides(size = "none",
+         colour = guide_colourbar(barheight = unit(25, "cm"))) +
+  ylab(expression(atop("Number of significantly different", "study sites pairs")))+xlab("Frequency bins (kHz)")+
+  facet_grid(Index~time.period) +
+  theme(axis.title = element_text(family = "serif", size = 44),
+        axis.text.x = element_text(family = "serif", size = 36, angle = 90, hjust = 1),
+        axis.text.y = element_text(family = "serif", size = 36),
+        axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
+        axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1),
+        legend.title = element_text(family = "serif", size = 36),
+        legend.text = element_text(family = "serif", size = 36),
+        panel.background = element_blank(),
+        #strip.background = element_blank(),
+        strip.text = element_text(family = "serif", size = 36))
 
 
+dev.off()
 
 
 ##
