@@ -11,6 +11,7 @@ library(ggplot2)
 library(RColorBrewer)
 library(Hmisc)
 library(corrplot)
+library(rstatix)
 #library(scales)
 #library(multcomp)
 #library(multcompView)
@@ -36,6 +37,15 @@ CN.location <- read.csv("data/pontos_soundscape.csv", header = T)
 #### exploratory ####
 # copy
 CN.data <- CN.data.raw.ed2
+# excluding NPeak variable
+# it was used to calculate acustic activity [AA*]
+# total correlation
+CN.data <- CN.data[,grep("NPeak", colnames(CN.data), invert = T)]
+
+# excluding S2N variable
+# it was calculated base on background noise [BGN*]
+# total correlation
+CN.data <- CN.data[,grep("S2N", colnames(CN.data), invert = T)]
 
 ## checking
 #head(CN.data);tail(CN.data)
@@ -394,6 +404,1925 @@ corrplot(cor(CN.data[, grep("Total", names(CN.data))], method = "spearman", use 
          diag = F)
 
 dev.off()
+
+
+
+## difference between sites
+# creating data frame
+
+local.diff <- data.frame(Index = rep(c("H", "BGN", "AA", "ADI", "AEI"), 25),
+                                frequency.bin = rep(rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-21.1"), each=5), 5),
+                                time.period = rep(c("Total", "Dawn", "Day", "Dusk", "Night"), each = 25),
+                                effect.size = NA, n.sig = NA)
+
+#
+local.diff$effect.size[1] <- as.numeric(CN.data %>% 
+                                                 dplyr::select(c(Local, HTotal)) %>% 
+                                                 kruskal_effsize(HTotal ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[1] <- as.numeric(CN.data %>% 
+                                           dplyr::select(c(Local, HTotal)) %>% 
+                                           dunn_test(HTotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[2] <- as.numeric(CN.data %>% 
+                                                 dplyr::select(c(Local, BGNTotal)) %>% 
+                                                 kruskal_effsize(BGNTotal ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[2] <- as.numeric(CN.data %>% 
+                                           dplyr::select(c(Local, BGNTotal)) %>% 
+                                           dunn_test(BGNTotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[3] <- as.numeric(CN.data %>% 
+                                                 dplyr::select(c(Local, AATotal)) %>% 
+                                                 kruskal_effsize(AATotal ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[3] <- as.numeric(CN.data %>% 
+                                           dplyr::select(c(Local, AATotal)) %>% 
+                                           dunn_test(AATotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[4] <- as.numeric(CN.data %>% 
+                                                 dplyr::select(c(Local, ADITotal)) %>% 
+                                                 kruskal_effsize(ADITotal ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[4] <- as.numeric(CN.data %>% 
+                                           dplyr::select(c(Local, ADITotal)) %>% 
+                                           dunn_test(ADITotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[5] <- as.numeric(CN.data %>% 
+                                                 dplyr::select(c(Local, AEITotal)) %>% 
+                                                 kruskal_effsize(AEITotal ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[5] <- as.numeric(CN.data %>% 
+                                           dplyr::select(c(Local, AEITotal)) %>% 
+                                           dunn_test(AEITotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[6] <- as.numeric(CN.data %>% 
+                                                 dplyr::select(c(Local, Hfbin1)) %>% 
+                                                 kruskal_effsize(Hfbin1 ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[6] <- as.numeric(CN.data %>% 
+                                           dplyr::select(c(Local, Hfbin1)) %>% 
+                                           dunn_test(Hfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[7] <- as.numeric(CN.data %>% 
+                                                 dplyr::select(c(Local, BGNfbin1)) %>% 
+                                                 kruskal_effsize(BGNfbin1 ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[7] <- as.numeric(CN.data %>% 
+                                           dplyr::select(c(Local, BGNfbin1)) %>% 
+                                           dunn_test(BGNfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[8] <- as.numeric(CN.data %>% 
+                                                 dplyr::select(c(Local, AAfbin1)) %>% 
+                                                 kruskal_effsize(AAfbin1 ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[8] <- as.numeric(CN.data %>% 
+                                           dplyr::select(c(Local, AAfbin1)) %>% 
+                                           dunn_test(AAfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[9] <- as.numeric(CN.data %>% 
+                                                 dplyr::select(c(Local, ADIfbin1)) %>% 
+                                                 kruskal_effsize(ADIfbin1 ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[9] <- as.numeric(CN.data %>% 
+                                           dplyr::select(c(Local, ADIfbin1)) %>% 
+                                           dunn_test(ADIfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[10] <- as.numeric(CN.data %>% 
+                                                 dplyr::select(c(Local, AEIfbin1)) %>% 
+                                                 kruskal_effsize(AEIfbin1 ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[10] <- as.numeric(CN.data %>% 
+                                           dplyr::select(c(Local, AEIfbin1)) %>% 
+                                           dunn_test(AEIfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[11] <- as.numeric(CN.data %>% 
+                                                 dplyr::select(c(Local, Hfbin2)) %>% 
+                                                 kruskal_effsize(Hfbin2 ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[11] <- as.numeric(CN.data %>% 
+                                           dplyr::select(c(Local, Hfbin2)) %>% 
+                                           dunn_test(Hfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[12] <- as.numeric(CN.data %>% 
+                                                 dplyr::select(c(Local, BGNfbin2)) %>% 
+                                                 kruskal_effsize(BGNfbin2 ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[12] <- as.numeric(CN.data %>% 
+                                           dplyr::select(c(Local, BGNfbin2)) %>% 
+                                           dunn_test(BGNfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[13] <- as.numeric(CN.data %>% 
+                                                  dplyr::select(c(Local, AAfbin2)) %>% 
+                                                  kruskal_effsize(AAfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[13] <- as.numeric(CN.data %>% 
+                                            dplyr::select(c(Local, AAfbin2)) %>% 
+                                            dunn_test(AAfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[14] <- as.numeric(CN.data %>% 
+                                                  dplyr::select(c(Local, ADIfbin2)) %>% 
+                                                  kruskal_effsize(ADIfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[14] <- as.numeric(CN.data %>% 
+                                            dplyr::select(c(Local, ADIfbin2)) %>% 
+                                            dunn_test(ADIfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[15] <- as.numeric(CN.data %>% 
+                                                  dplyr::select(c(Local, AEIfbin2)) %>% 
+                                                  kruskal_effsize(AEIfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[15] <- as.numeric(CN.data %>% 
+                                            dplyr::select(c(Local, AEIfbin2)) %>% 
+                                            dunn_test(AEIfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[16] <- as.numeric(CN.data %>% 
+                                                  dplyr::select(c(Local, Hfbin3)) %>% 
+                                                  kruskal_effsize(Hfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[16] <- as.numeric(CN.data %>% 
+                                            dplyr::select(c(Local, Hfbin3)) %>% 
+                                            dunn_test(Hfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[17] <- as.numeric(CN.data %>% 
+                                                  dplyr::select(c(Local, BGNfbin3)) %>% 
+                                                  kruskal_effsize(BGNfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[17] <- as.numeric(CN.data %>% 
+                                            dplyr::select(c(Local, BGNfbin3)) %>% 
+                                            dunn_test(BGNfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[18] <- as.numeric(CN.data %>% 
+                                                  dplyr::select(c(Local, AAfbin3)) %>% 
+                                                  kruskal_effsize(AAfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[18] <- as.numeric(CN.data %>% 
+                                            dplyr::select(c(Local, AAfbin3)) %>% 
+                                            dunn_test(AAfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[19] <- as.numeric(CN.data %>% 
+                                                  dplyr::select(c(Local, ADIfbin3)) %>% 
+                                                  kruskal_effsize(ADIfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[19] <- as.numeric(CN.data %>% 
+                                            dplyr::select(c(Local, ADIfbin3)) %>% 
+                                            dunn_test(ADIfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[20] <- as.numeric(CN.data %>% 
+                                                  dplyr::select(c(Local, AEIfbin3)) %>% 
+                                                  kruskal_effsize(AEIfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[20] <- as.numeric(CN.data %>% 
+                                            dplyr::select(c(Local, AEIfbin3)) %>% 
+                                            dunn_test(AEIfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[21] <- as.numeric(CN.data %>% 
+                                                  dplyr::select(c(Local, Hfbin4)) %>% 
+                                                  kruskal_effsize(Hfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[21] <- as.numeric(CN.data %>% 
+                                            dplyr::select(c(Local, Hfbin4)) %>% 
+                                            dunn_test(Hfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[22] <- as.numeric(CN.data %>% 
+                                                  dplyr::select(c(Local, BGNfbin4)) %>% 
+                                                  kruskal_effsize(BGNfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[22] <- as.numeric(CN.data %>% 
+                                            dplyr::select(c(Local, BGNfbin4)) %>% 
+                                            dunn_test(BGNfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[23] <- as.numeric(CN.data %>% 
+                                                  dplyr::select(c(Local, AAfbin4)) %>% 
+                                                  kruskal_effsize(AAfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[23] <- as.numeric(CN.data %>% 
+                                            dplyr::select(c(Local, AAfbin4)) %>% 
+                                            dunn_test(AAfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[24] <- as.numeric(CN.data %>% 
+                                                  dplyr::select(c(Local, ADIfbin4)) %>% 
+                                                  kruskal_effsize(ADIfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[24] <- as.numeric(CN.data %>% 
+                                            dplyr::select(c(Local, ADIfbin4)) %>% 
+                                            dunn_test(ADIfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[25] <- as.numeric(CN.data %>% 
+                                                  dplyr::select(c(Local, AEIfbin4)) %>% 
+                                                  kruskal_effsize(AEIfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[25] <- as.numeric(CN.data %>% 
+                                            dplyr::select(c(Local, AEIfbin4)) %>% 
+                                            dunn_test(AEIfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[26] <- as.numeric(CN.data %>% 
+                                                 dplyr::filter(time_period == "dawn") %>%
+                                                 dplyr::select(c(Local, HTotal)) %>% 
+                                                 kruskal_effsize(HTotal ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[26] <- as.numeric(CN.data %>% 
+                                           dplyr::filter(time_period == "dawn") %>% 
+                                           dplyr::select(c(Local, HTotal)) %>% 
+                                           dunn_test(HTotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[27] <- as.numeric(CN.data %>% 
+                                                  dplyr::filter(time_period == "dawn") %>% 
+                                                 dplyr::select(c(Local, BGNTotal)) %>% 
+                                                 kruskal_effsize(BGNTotal ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[27] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                           dplyr::select(c(Local, BGNTotal)) %>% 
+                                           dunn_test(BGNTotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[28] <- as.numeric(CN.data %>% 
+                                                  dplyr::filter(time_period == "dawn") %>% 
+                                                 dplyr::select(c(Local, AATotal)) %>% 
+                                                 kruskal_effsize(AATotal ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[28] <- as.numeric(CN.data %>% 
+                                            dplyr::filter(time_period == "dawn") %>% 
+                                           dplyr::select(c(Local, AATotal)) %>% 
+                                           dunn_test(AATotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[29] <- as.numeric(CN.data %>% 
+                                                  dplyr::filter(time_period == "dawn") %>% 
+                                                 dplyr::select(c(Local, ADITotal)) %>% 
+                                                 kruskal_effsize(ADITotal ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[29] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                           dplyr::select(c(Local, ADITotal)) %>% 
+                                           dunn_test(ADITotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[30] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                 dplyr::select(c(Local, AEITotal)) %>% 
+                                                 kruskal_effsize(AEITotal ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[30] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                           dplyr::select(c(Local, AEITotal)) %>% 
+                                           dunn_test(AEITotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[31] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                 dplyr::select(c(Local, Hfbin1)) %>% 
+                                                 kruskal_effsize(Hfbin1 ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[31] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                           dplyr::select(c(Local, Hfbin1)) %>% 
+                                           dunn_test(Hfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[32] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                 dplyr::select(c(Local, BGNfbin1)) %>% 
+                                                 kruskal_effsize(BGNfbin1 ~ Local) %>% 
+                                                 dplyr::select(effsize))
+
+
+local.diff$n.sig[32] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                           dplyr::select(c(Local, BGNfbin1)) %>% 
+                                           dunn_test(BGNfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                           dplyr::filter(p.adj.signif != "ns") %>% 
+                                           count())
+
+#
+local.diff$effect.size[33] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, AAfbin1)) %>% 
+                                                  kruskal_effsize(AAfbin1 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[33] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, AAfbin1)) %>% 
+                                            dunn_test(AAfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[34] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, ADIfbin1)) %>% 
+                                                  kruskal_effsize(ADIfbin1 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[34] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, ADIfbin1)) %>% 
+                                            dunn_test(ADIfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[35] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, AEIfbin1)) %>% 
+                                                  kruskal_effsize(AEIfbin1 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[35] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, AEIfbin1)) %>% 
+                                            dunn_test(AEIfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[36] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, Hfbin2)) %>% 
+                                                  kruskal_effsize(Hfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[36] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, Hfbin2)) %>% 
+                                            dunn_test(Hfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[37] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, BGNfbin2)) %>% 
+                                                  kruskal_effsize(BGNfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[37] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, BGNfbin2)) %>% 
+                                            dunn_test(BGNfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[38] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, AAfbin2)) %>% 
+                                                  kruskal_effsize(AAfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[38] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, AAfbin2)) %>% 
+                                            dunn_test(AAfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[39] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, ADIfbin2)) %>% 
+                                                  kruskal_effsize(ADIfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[39] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, ADIfbin2)) %>% 
+                                            dunn_test(ADIfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[40] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, AEIfbin2)) %>% 
+                                                  kruskal_effsize(AEIfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[40] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, AEIfbin2)) %>% 
+                                            dunn_test(AEIfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[41] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, Hfbin3)) %>% 
+                                                  kruskal_effsize(Hfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[41] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, Hfbin3)) %>% 
+                                            dunn_test(Hfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[42] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, BGNfbin3)) %>% 
+                                                  kruskal_effsize(BGNfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[42] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, BGNfbin3)) %>% 
+                                            dunn_test(BGNfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[43] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, AAfbin3)) %>% 
+                                                  kruskal_effsize(AAfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[43] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, AAfbin3)) %>% 
+                                            dunn_test(AAfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[44] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, ADIfbin3)) %>% 
+                                                  kruskal_effsize(ADIfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[44] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, ADIfbin3)) %>% 
+                                            dunn_test(ADIfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[45] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, AEIfbin3)) %>% 
+                                                  kruskal_effsize(AEIfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[45] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, AEIfbin3)) %>% 
+                                            dunn_test(AEIfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[46] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, Hfbin4)) %>% 
+                                                  kruskal_effsize(Hfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[46] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, Hfbin4)) %>% 
+                                            dunn_test(Hfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[47] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, BGNfbin4)) %>% 
+                                                  kruskal_effsize(BGNfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[47] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, BGNfbin4)) %>% 
+                                            dunn_test(BGNfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[48] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, AAfbin4)) %>% 
+                                                  kruskal_effsize(AAfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[48] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, AAfbin4)) %>% 
+                                            dunn_test(AAfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[49] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, ADIfbin4)) %>% 
+                                                  kruskal_effsize(ADIfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[49] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, ADIfbin4)) %>% 
+                                            dunn_test(ADIfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[50] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dawn") %>%
+                                                  dplyr::select(c(Local, AEIfbin4)) %>% 
+                                                  kruskal_effsize(AEIfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[50] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dawn") %>%
+                                            dplyr::select(c(Local, AEIfbin4)) %>% 
+                                            dunn_test(AEIfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[51] <- as.numeric(CN.data %>% 
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, HTotal)) %>% 
+                                                  kruskal_effsize(HTotal ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[51] <- as.numeric(CN.data %>% 
+                                            dplyr::filter(time_period == "day") %>% 
+                                            dplyr::select(c(Local, HTotal)) %>% 
+                                            dunn_test(HTotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[52] <- as.numeric(CN.data %>% 
+                                                  dplyr::filter(time_period == "day") %>% 
+                                                  dplyr::select(c(Local, BGNTotal)) %>% 
+                                                  kruskal_effsize(BGNTotal ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[52] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, BGNTotal)) %>% 
+                                            dunn_test(BGNTotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[53] <- as.numeric(CN.data %>% 
+                                                  dplyr::filter(time_period == "day") %>% 
+                                                  dplyr::select(c(Local, AATotal)) %>% 
+                                                  kruskal_effsize(AATotal ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[53] <- as.numeric(CN.data %>% 
+                                            dplyr::filter(time_period == "day") %>% 
+                                            dplyr::select(c(Local, AATotal)) %>% 
+                                            dunn_test(AATotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[54] <- as.numeric(CN.data %>% 
+                                                  dplyr::filter(time_period == "day") %>% 
+                                                  dplyr::select(c(Local, ADITotal)) %>% 
+                                                  kruskal_effsize(ADITotal ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[54] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, ADITotal)) %>% 
+                                            dunn_test(ADITotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[55] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, AEITotal)) %>% 
+                                                  kruskal_effsize(AEITotal ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[55] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, AEITotal)) %>% 
+                                            dunn_test(AEITotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[56] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, Hfbin1)) %>% 
+                                                  kruskal_effsize(Hfbin1 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[56] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, Hfbin1)) %>% 
+                                            dunn_test(Hfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[57] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, BGNfbin1)) %>% 
+                                                  kruskal_effsize(BGNfbin1 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[57] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, BGNfbin1)) %>% 
+                                            dunn_test(BGNfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[58] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, AAfbin1)) %>% 
+                                                  kruskal_effsize(AAfbin1 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[58] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, AAfbin1)) %>% 
+                                            dunn_test(AAfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[59] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, ADIfbin1)) %>% 
+                                                  kruskal_effsize(ADIfbin1 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[59] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, ADIfbin1)) %>% 
+                                            dunn_test(ADIfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[60] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, AEIfbin1)) %>% 
+                                                  kruskal_effsize(AEIfbin1 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[60] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, AEIfbin1)) %>% 
+                                            dunn_test(AEIfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[61] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, Hfbin2)) %>% 
+                                                  kruskal_effsize(Hfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[61] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, Hfbin2)) %>% 
+                                            dunn_test(Hfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[62] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, BGNfbin2)) %>% 
+                                                  kruskal_effsize(BGNfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[62] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, BGNfbin2)) %>% 
+                                            dunn_test(BGNfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[63] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, AAfbin2)) %>% 
+                                                  kruskal_effsize(AAfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[63] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, AAfbin2)) %>% 
+                                            dunn_test(AAfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[64] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, ADIfbin2)) %>% 
+                                                  kruskal_effsize(ADIfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[64] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, ADIfbin2)) %>% 
+                                            dunn_test(ADIfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[65] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, AEIfbin2)) %>% 
+                                                  kruskal_effsize(AEIfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[65] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, AEIfbin2)) %>% 
+                                            dunn_test(AEIfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[66] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, Hfbin3)) %>% 
+                                                  kruskal_effsize(Hfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[66] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, Hfbin3)) %>% 
+                                            dunn_test(Hfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[67] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, BGNfbin3)) %>% 
+                                                  kruskal_effsize(BGNfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[67] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, BGNfbin3)) %>% 
+                                            dunn_test(BGNfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[68] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, AAfbin3)) %>% 
+                                                  kruskal_effsize(AAfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[68] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, AAfbin3)) %>% 
+                                            dunn_test(AAfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[69] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, ADIfbin3)) %>% 
+                                                  kruskal_effsize(ADIfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[69] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, ADIfbin3)) %>% 
+                                            dunn_test(ADIfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[70] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, AEIfbin3)) %>% 
+                                                  kruskal_effsize(AEIfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[70] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, AEIfbin3)) %>% 
+                                            dunn_test(AEIfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[71] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, Hfbin4)) %>% 
+                                                  kruskal_effsize(Hfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[71] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, Hfbin4)) %>% 
+                                            dunn_test(Hfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[72] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, BGNfbin4)) %>% 
+                                                  kruskal_effsize(BGNfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[72] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, BGNfbin4)) %>% 
+                                            dunn_test(BGNfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[73] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, AAfbin4)) %>% 
+                                                  kruskal_effsize(AAfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[73] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, AAfbin4)) %>% 
+                                            dunn_test(AAfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[74] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, ADIfbin4)) %>% 
+                                                  kruskal_effsize(ADIfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[74] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, ADIfbin4)) %>% 
+                                            dunn_test(ADIfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[75] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "day") %>%
+                                                  dplyr::select(c(Local, AEIfbin4)) %>% 
+                                                  kruskal_effsize(AEIfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[75] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "day") %>%
+                                            dplyr::select(c(Local, AEIfbin4)) %>% 
+                                            dunn_test(AEIfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[76] <- as.numeric(CN.data %>% 
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, HTotal)) %>% 
+                                                  kruskal_effsize(HTotal ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[76] <- as.numeric(CN.data %>% 
+                                            dplyr::filter(time_period == "dusk") %>% 
+                                            dplyr::select(c(Local, HTotal)) %>% 
+                                            dunn_test(HTotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[77] <- as.numeric(CN.data %>% 
+                                                  dplyr::filter(time_period == "dusk") %>% 
+                                                  dplyr::select(c(Local, BGNTotal)) %>% 
+                                                  kruskal_effsize(BGNTotal ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[77] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, BGNTotal)) %>% 
+                                            dunn_test(BGNTotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[78] <- as.numeric(CN.data %>% 
+                                                  dplyr::filter(time_period == "dusk") %>% 
+                                                  dplyr::select(c(Local, AATotal)) %>% 
+                                                  kruskal_effsize(AATotal ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[78] <- as.numeric(CN.data %>% 
+                                            dplyr::filter(time_period == "dusk") %>% 
+                                            dplyr::select(c(Local, AATotal)) %>% 
+                                            dunn_test(AATotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[79] <- as.numeric(CN.data %>% 
+                                                  dplyr::filter(time_period == "dusk") %>% 
+                                                  dplyr::select(c(Local, ADITotal)) %>% 
+                                                  kruskal_effsize(ADITotal ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[79] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, ADITotal)) %>% 
+                                            dunn_test(ADITotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[80] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, AEITotal)) %>% 
+                                                  kruskal_effsize(AEITotal ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[80] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, AEITotal)) %>% 
+                                            dunn_test(AEITotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[81] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, Hfbin1)) %>% 
+                                                  kruskal_effsize(Hfbin1 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[81] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, Hfbin1)) %>% 
+                                            dunn_test(Hfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[82] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, BGNfbin1)) %>% 
+                                                  kruskal_effsize(BGNfbin1 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[82] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, BGNfbin1)) %>% 
+                                            dunn_test(BGNfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[83] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, AAfbin1)) %>% 
+                                                  kruskal_effsize(AAfbin1 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[83] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, AAfbin1)) %>% 
+                                            dunn_test(AAfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[84] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, ADIfbin1)) %>% 
+                                                  kruskal_effsize(ADIfbin1 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[84] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, ADIfbin1)) %>% 
+                                            dunn_test(ADIfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[85] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, AEIfbin1)) %>% 
+                                                  kruskal_effsize(AEIfbin1 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[85] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, AEIfbin1)) %>% 
+                                            dunn_test(AEIfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[86] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, Hfbin2)) %>% 
+                                                  kruskal_effsize(Hfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[86] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, Hfbin2)) %>% 
+                                            dunn_test(Hfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[87] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, BGNfbin2)) %>% 
+                                                  kruskal_effsize(BGNfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[87] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, BGNfbin2)) %>% 
+                                            dunn_test(BGNfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[88] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, AAfbin2)) %>% 
+                                                  kruskal_effsize(AAfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[88] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, AAfbin2)) %>% 
+                                            dunn_test(AAfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[89] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, ADIfbin2)) %>% 
+                                                  kruskal_effsize(ADIfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[89] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, ADIfbin2)) %>% 
+                                            dunn_test(ADIfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[90] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, AEIfbin2)) %>% 
+                                                  kruskal_effsize(AEIfbin2 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[90] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, AEIfbin2)) %>% 
+                                            dunn_test(AEIfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[91] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, Hfbin3)) %>% 
+                                                  kruskal_effsize(Hfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[91] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, Hfbin3)) %>% 
+                                            dunn_test(Hfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[92] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, BGNfbin3)) %>% 
+                                                  kruskal_effsize(BGNfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[92] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, BGNfbin3)) %>% 
+                                            dunn_test(BGNfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[93] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, AAfbin3)) %>% 
+                                                  kruskal_effsize(AAfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[93] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, AAfbin3)) %>% 
+                                            dunn_test(AAfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[94] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, ADIfbin3)) %>% 
+                                                  kruskal_effsize(ADIfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[94] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, ADIfbin3)) %>% 
+                                            dunn_test(ADIfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[95] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, AEIfbin3)) %>% 
+                                                  kruskal_effsize(AEIfbin3 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[95] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, AEIfbin3)) %>% 
+                                            dunn_test(AEIfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[96] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, Hfbin4)) %>% 
+                                                  kruskal_effsize(Hfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[96] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, Hfbin4)) %>% 
+                                            dunn_test(Hfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[97] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, BGNfbin4)) %>% 
+                                                  kruskal_effsize(BGNfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[97] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, BGNfbin4)) %>% 
+                                            dunn_test(BGNfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[98] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, AAfbin4)) %>% 
+                                                  kruskal_effsize(AAfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[98] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, AAfbin4)) %>% 
+                                            dunn_test(AAfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[99] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, ADIfbin4)) %>% 
+                                                  kruskal_effsize(ADIfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[99] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, ADIfbin4)) %>% 
+                                            dunn_test(ADIfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[100] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "dusk") %>%
+                                                  dplyr::select(c(Local, AEIfbin4)) %>% 
+                                                  kruskal_effsize(AEIfbin4 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[100] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "dusk") %>%
+                                            dplyr::select(c(Local, AEIfbin4)) %>% 
+                                            dunn_test(AEIfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[101] <- as.numeric(CN.data %>% 
+                                                  dplyr::filter(time_period == "night") %>%
+                                                  dplyr::select(c(Local, HTotal)) %>% 
+                                                  kruskal_effsize(HTotal ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[101] <- as.numeric(CN.data %>% 
+                                            dplyr::filter(time_period == "night") %>% 
+                                            dplyr::select(c(Local, HTotal)) %>% 
+                                            dunn_test(HTotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[102] <- as.numeric(CN.data %>% 
+                                                  dplyr::filter(time_period == "night") %>% 
+                                                  dplyr::select(c(Local, BGNTotal)) %>% 
+                                                  kruskal_effsize(BGNTotal ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[102] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "night") %>%
+                                            dplyr::select(c(Local, BGNTotal)) %>% 
+                                            dunn_test(BGNTotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[103] <- as.numeric(CN.data %>% 
+                                                  dplyr::filter(time_period == "night") %>% 
+                                                  dplyr::select(c(Local, AATotal)) %>% 
+                                                  kruskal_effsize(AATotal ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[103] <- as.numeric(CN.data %>% 
+                                            dplyr::filter(time_period == "night") %>% 
+                                            dplyr::select(c(Local, AATotal)) %>% 
+                                            dunn_test(AATotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[104] <- as.numeric(CN.data %>% 
+                                                  dplyr::filter(time_period == "night") %>% 
+                                                  dplyr::select(c(Local, ADITotal)) %>% 
+                                                  kruskal_effsize(ADITotal ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[104] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "night") %>%
+                                            dplyr::select(c(Local, ADITotal)) %>% 
+                                            dunn_test(ADITotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[105] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "night") %>%
+                                                  dplyr::select(c(Local, AEITotal)) %>% 
+                                                  kruskal_effsize(AEITotal ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[105] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "night") %>%
+                                            dplyr::select(c(Local, AEITotal)) %>% 
+                                            dunn_test(AEITotal ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[106] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "night") %>%
+                                                  dplyr::select(c(Local, Hfbin1)) %>% 
+                                                  kruskal_effsize(Hfbin1 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[106] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "night") %>%
+                                            dplyr::select(c(Local, Hfbin1)) %>% 
+                                            dunn_test(Hfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[107] <- as.numeric(CN.data %>%  
+                                                  dplyr::filter(time_period == "night") %>%
+                                                  dplyr::select(c(Local, BGNfbin1)) %>% 
+                                                  kruskal_effsize(BGNfbin1 ~ Local) %>% 
+                                                  dplyr::select(effsize))
+
+
+local.diff$n.sig[107] <- as.numeric(CN.data %>%  
+                                            dplyr::filter(time_period == "night") %>%
+                                            dplyr::select(c(Local, BGNfbin1)) %>% 
+                                            dunn_test(BGNfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                            dplyr::filter(p.adj.signif != "ns") %>% 
+                                            count())
+
+#
+local.diff$effect.size[108] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, AAfbin1)) %>% 
+                                                   kruskal_effsize(AAfbin1 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[108] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, AAfbin1)) %>% 
+                                             dunn_test(AAfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[109] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, ADIfbin1)) %>% 
+                                                   kruskal_effsize(ADIfbin1 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[109] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, ADIfbin1)) %>% 
+                                             dunn_test(ADIfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[110] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, AEIfbin1)) %>% 
+                                                   kruskal_effsize(AEIfbin1 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[110] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, AEIfbin1)) %>% 
+                                             dunn_test(AEIfbin1 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[111] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, Hfbin2)) %>% 
+                                                   kruskal_effsize(Hfbin2 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[111] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, Hfbin2)) %>% 
+                                             dunn_test(Hfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[112] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, BGNfbin2)) %>% 
+                                                   kruskal_effsize(BGNfbin2 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[112] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, BGNfbin2)) %>% 
+                                             dunn_test(BGNfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[113] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, AAfbin2)) %>% 
+                                                   kruskal_effsize(AAfbin2 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[113] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, AAfbin2)) %>% 
+                                             dunn_test(AAfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[114] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, ADIfbin2)) %>% 
+                                                   kruskal_effsize(ADIfbin2 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[114] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, ADIfbin2)) %>% 
+                                             dunn_test(ADIfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[115] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, AEIfbin2)) %>% 
+                                                   kruskal_effsize(AEIfbin2 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[115] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, AEIfbin2)) %>% 
+                                             dunn_test(AEIfbin2 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[116] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, Hfbin3)) %>% 
+                                                   kruskal_effsize(Hfbin3 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[116] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, Hfbin3)) %>% 
+                                             dunn_test(Hfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[117] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, BGNfbin3)) %>% 
+                                                   kruskal_effsize(BGNfbin3 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[117] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, BGNfbin3)) %>% 
+                                             dunn_test(BGNfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[118] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, AAfbin3)) %>% 
+                                                   kruskal_effsize(AAfbin3 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[118] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, AAfbin3)) %>% 
+                                             dunn_test(AAfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[119] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, ADIfbin3)) %>% 
+                                                   kruskal_effsize(ADIfbin3 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[119] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, ADIfbin3)) %>% 
+                                             dunn_test(ADIfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[120] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, AEIfbin3)) %>% 
+                                                   kruskal_effsize(AEIfbin3 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[120] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, AEIfbin3)) %>% 
+                                             dunn_test(AEIfbin3 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[121] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, Hfbin4)) %>% 
+                                                   kruskal_effsize(Hfbin4 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[121] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, Hfbin4)) %>% 
+                                             dunn_test(Hfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[122] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, BGNfbin4)) %>% 
+                                                   kruskal_effsize(BGNfbin4 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[122] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, BGNfbin4)) %>% 
+                                             dunn_test(BGNfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[123] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, AAfbin4)) %>% 
+                                                   kruskal_effsize(AAfbin4 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[123] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, AAfbin4)) %>% 
+                                             dunn_test(AAfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[124] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, ADIfbin4)) %>% 
+                                                   kruskal_effsize(ADIfbin4 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[124] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, ADIfbin4)) %>% 
+                                             dunn_test(ADIfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+#
+local.diff$effect.size[125] <- as.numeric(CN.data %>%  
+                                                   dplyr::filter(time_period == "night") %>%
+                                                   dplyr::select(c(Local, AEIfbin4)) %>% 
+                                                   kruskal_effsize(AEIfbin4 ~ Local) %>% 
+                                                   dplyr::select(effsize))
+
+
+local.diff$n.sig[125] <- as.numeric(CN.data %>%  
+                                             dplyr::filter(time_period == "night") %>%
+                                             dplyr::select(c(Local, AEIfbin4)) %>% 
+                                             dunn_test(AEIfbin4 ~ Local, p.adjust.method = "bonferroni") %>% 
+                                             dplyr::filter(p.adj.signif != "ns") %>% 
+                                             count())
+
+
+write.csv(local.diff, "results/localdiff.csv", row.names = F)
+
+
+
+
+##
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
