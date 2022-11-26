@@ -31,9 +31,6 @@ CN.data.raw.ed2 <- read.csv("data/AcousticIndex_102022_v3.csv", header = T)
 # reordering columns
 CN.data.raw.ed2 <- CN.data.raw.ed2[,c(1:7,43,8:42,44)]
 
-# location and environmental data
-CN.location <- read.csv("data/pontos_soundscape.csv", header = T)
-
 #### exploratory ####
 # copy
 CN.data <- CN.data.raw.ed2
@@ -52,20 +49,61 @@ CN.data <- CN.data[,grep("S2N", colnames(CN.data), invert = T)]
 #str(CN.data)
 #summary(CN.data)
 
+
+#### adding environmental variables ####
+# location and environmental data
+CN.location <- read.csv("data/pontos_soundscape.csv", header = T)
+
+
+# temperature, precipitation, air humidity, wind velocity
+# source: https://bdmep.inmet.gov.br/
+weather <- read.csv("data/raw_environmental_data/dados_A230_H_2019-11-01_2022-05-20 - Copia.csv", sep = ";") %>% 
+               mutate(Year = as.numeric(substr(Data.Medicao, 1, 4)),
+                      Month = as.numeric(sub("^0+", "", substr(Data.Medicao, 6, 7))),
+                      Day = as.numeric(sub("^0+", "", substr(Data.Medicao, 9, 10))),
+                      Hour = as.numeric(rep(0:23, length.out=nrow(weather)))) %>% 
+               select(Year:Hour,PRECIPITACAO.TOTAL..HORARIO.mm.:VENTO..VELOCIDADE.HORARIA.m.s.)
+
+# NDVI (Normalized Difference Vegetation Index)
+# source: https://neo.gsfc.nasa.gov/view.php?datasetId=MOD_NDVI_M
+ndvi2019 <- raster::raster("data/raw_environmental_data/MOD_NDVI_M_2019-11-01_rgb_3600x1800.TIFF")
+ndvi2022 <- raster::raster("data/raw_environmental_data/MOD_NDVI_M_2022-04-01_rgb_3600x1800.TIFF")
+
+# Global Forest Canopy Height - 2019
+# source: https://glad.umd.edu/dataset/gedi/
+treeheight <- raster::raster("data/raw_environmental_data/Forest_height_2019_SAM.tif")
+
+
 # transforming:
 # adding Date column; 
 # sorting sites from CN1 to CN14;
 # adding time period category variable;
 # and converting columns to factors
-CN.data <- CN.data %>%
-             mutate(Date = parse_date_time(sub(".*_", "", CN.data$ldt.index), orders = "%Y%m%d%H%M")) %>% 
-             mutate(Local=fct_relevel(Local,paste0("CN", seq(1:14)))) %>% 
-             mutate(time_period = ifelse(as.numeric(as.character(Min)) >= 39 & as.numeric(as.character(Min)) <= 50, "dawn",
-                                         ifelse(as.numeric(as.character(Min)) >= 51 & as.numeric(as.character(Min)) <= 110, "day",
-                                                ifelse(as.numeric(as.character(Min)) >= 111 & as.numeric(as.character(Min)) <= 122, "dusk", "night")))) %>% 
-             mutate_at(vars(ID:Min, time_period), factor)
+CN.data <- CN.data %>% 
+  left_join(CN.location) %>% 
+  left_join(weather) %>%
+  mutate(Date = parse_date_time(sub(".*_", "", CN.data$ldt.index), orders = "%Y%m%d%H%M"),
+         Local=fct_relevel(Local,paste0("CN", seq(1:14))),
+         time_period = ifelse(as.numeric(as.character(Min)) >= 39 & as.numeric(as.character(Min)) <= 50, "dawn",
+                              ifelse(as.numeric(as.character(Min)) >= 51 & as.numeric(as.character(Min)) <= 110, "day",
+                                     ifelse(as.numeric(as.character(Min)) >= 111 & as.numeric(as.character(Min)) <= 122, "dusk", "night")))) %>% 
+  mutate_at(vars(ID:Min, time_period), factor)
+
+CN.data$NDVI <- ifelse(CN.data$Year==2019, raster::extract(ndvi2019, sp::SpatialPoints(CN.data[,c("long","lat")])),
+                       raster::extract(ndvi2022, sp::SpatialPoints(CN.data[,c("long","lat")])))
+
+CN.data$treeheight <- raster::extract(treeheight, sp::SpatialPoints(CN.data[,c("long","lat")]))
 
 str(CN.data)
+
+
+
+# reordering columns
+CN.data <- CN.data[,c(1,8,2,35,36,42,43,3:7,9:33,37:41,44,45,34)]
+
+# saving
+write.csv(CN.data, "data/AcousticIndex_102022_v4.csv", row.names = F)
+
 
 #### between minutes by points ####
 dir.create("results")
@@ -421,7 +459,7 @@ for (l in unique(CN.data$Local)) {
   
   cnx <- CN.data[CN.data$Local==l,]
   
-  for (i in names(CN.data)[9:33]) {
+  for (i in names(CN.data)[13:37]) {
     
     cnx.index <- cnx[sample(1:nrow(cnx), 500, replace = T), c(i,"time_period")]
     
@@ -462,7 +500,7 @@ time.period.diff <- time.period.diff %>%
   
 time.period.diff.hline <- time.period.diff[time.period.diff$frequency.bin=="Total", ]
   
-png("results/timeperioddiff.png", width = 1440, height = 2560, units = "px", bg = "transparent")
+png("results/timeperioddifflocal.png", width = 1440, height = 2560, units = "px", bg = "transparent")
 
 time.period.diff %>%  
   ggplot(aes(frequency.bin, n.sig, colour = effect.size))+
@@ -488,6 +526,77 @@ time.period.diff %>%
 
 
 dev.off()
+#
+
+time.period.diff.total <- data.frame(index = rep(c("H", "BGN", "AA", "ADI", "AEI"), 5),
+                                     frequency.bin = rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 5),
+                                     effect.size = NA, n.sig = NA)
+
+c=1
+for (i in names(CN.data)[9:33]) {
+  
+  cnx.index <- CN.data %>% group_by(Local) %>% sample_n(size = 500, replace = T) %>% ungroup() %>% select(time_period, i)
+  
+  if (all(is.na(cnx.index[,i])) | all(cnx.index[,i]==0)) {
+    
+    time.period.diff.total$effect.size[c] <- NA
+    
+    time.period.diff.total$n.sig[c] <- NA
+  } 
+  
+  else {
+    
+    time.period.diff.total$effect.size[c] <- as.numeric(kruskal_effsize(cnx.index, formula(paste(i, "~ time_period"))) %>% 
+                                                    dplyr::select(effsize))
+    
+    time.period.diff.total$n.sig[c] <- as.numeric(dunn_test(cnx.index, formula(paste(i, "~ time_period")), p.adjust.method = "bonferroni") %>% 
+                                              summarise(n.sig = sum(p.adj.signif != "ns")))
+    
+  }
+  c=c+1
+}
+
+#checking
+str(time.period.diff.total)
+
+time.period.diff.total <- time.period.diff.total %>% 
+                          mutate(index=factor(index, levels = c("AA", "ADI", "AEI", "BGN", "H")),
+                                 frequency.bin=factor(frequency.bin, levels = c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1")))
+
+
+time.period.diff.total.hline <- time.period.diff.total[time.period.diff.total$frequency.bin=="Total", ]
+
+png("results/timeperioddifftotal.png", width = 2400, height = 640, units = "px", bg = "transparent")
+
+time.period.diff.total %>%  
+  ggplot(aes(frequency.bin, n.sig, colour = effect.size))+
+  geom_point(size=12)+
+  geom_hline(data=time.period.diff.total.hline, aes(yintercept=n.sig), size=1, linetype='dashed') +
+  scale_y_continuous(limits = c(0, 7), breaks = c(0, 2, 4, 6), expand = c(0.1,0.1)) +
+  scale_color_gradient("Effect size", low = "#F4A582", high = "#831529", na.value = NA)+
+  guides(size = "none",
+         colour = guide_colourbar(barheight = unit(12, "cm"))) +
+  ylab(expression(atop("Number of significantly different", "study sites pairs")))+xlab("Frequency bins (kHz)")+
+  facet_wrap(~index, nrow = 1) +
+  theme(axis.title = element_text(family = "serif", size = 34),
+        axis.text.x = element_text(family = "serif", size = 30, angle = 90, hjust = 1),
+        axis.text.y = element_text(family = "serif", size = 30),
+        axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
+        axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1),
+        legend.title = element_text(family = "serif", size = 30),
+        legend.text = element_text(family = "serif", size = 30),
+        panel.background = element_blank(),
+        panel.spacing.x = unit(1, "lines"),
+        panel.spacing.y = unit(2, "lines"),
+        strip.text = element_text(family = "serif", size = 30))
+
+
+dev.off()
+#
+
+
+
+
 
 #####
 
