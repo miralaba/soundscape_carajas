@@ -12,18 +12,21 @@ library(RColorBrewer)
 library(Hmisc)
 library(corrplot)
 library(rstatix)
-#library(scales)
+library(fitdistrplus)
+library(scales)
+library(glmmTMB)
+library(MuMIn)
+library(DHARMa)
+library(effects)
+library(broom.mixed)
+library(dotwhisker)
+#library(lme4)
 #library(multcomp)
 #library(multcompView)
 #library(emmeans)
 #library(MASS)
-#library(fitdistrplus)
-#library(lme4)
-#library(glmmTMB)
 #library(car)
-#library(MuMIn)
 #library(cowplot)
-#library(TTR)
 
 
 # soundscape index
@@ -57,7 +60,8 @@ CN.location <- read.csv("data/pontos_soundscape.csv", header = T)
 
 # temperature, precipitation, air humidity, wind velocity
 # source: https://bdmep.inmet.gov.br/
-weather <- read.csv("data/raw_environmental_data/dados_A230_H_2019-11-01_2022-05-20 - Copia.csv", sep = ";") %>% 
+weather <- read.csv("data/raw_environmental_data/dados_A230_H_2019-11-01_2022-05-20 - Copia.csv", sep = ";") 
+weather <- weather %>% 
                mutate(Year = as.numeric(substr(Data.Medicao, 1, 4)),
                       Month = as.numeric(sub("^0+", "", substr(Data.Medicao, 6, 7))),
                       Day = as.numeric(sub("^0+", "", substr(Data.Medicao, 9, 10))),
@@ -80,14 +84,14 @@ treeheight <- raster::raster("data/raw_environmental_data/Forest_height_2019_SAM
 # adding time period category variable;
 # and converting columns to factors
 CN.data <- CN.data %>% 
-  left_join(CN.location) %>% 
-  left_join(weather) %>%
-  mutate(Date = parse_date_time(sub(".*_", "", CN.data$ldt.index), orders = "%Y%m%d%H%M"),
-         Local=fct_relevel(Local,paste0("CN", seq(1:14))),
-         time_period = ifelse(as.numeric(as.character(Min)) >= 39 & as.numeric(as.character(Min)) <= 50, "dawn",
-                              ifelse(as.numeric(as.character(Min)) >= 51 & as.numeric(as.character(Min)) <= 110, "day",
-                                     ifelse(as.numeric(as.character(Min)) >= 111 & as.numeric(as.character(Min)) <= 122, "dusk", "night")))) %>% 
-  mutate_at(vars(ID:Min, time_period), factor)
+             left_join(CN.location) %>% 
+             left_join(weather) %>%
+             mutate(Date = parse_date_time(sub(".*_", "", CN.data$ldt.index), orders = "%Y%m%d%H%M"),
+                    Local=fct_relevel(Local,paste0("CN", seq(1:14))),
+                    time_period = ifelse(as.numeric(as.character(Min)) >= 39 & as.numeric(as.character(Min)) <= 50, "dawn",
+                                         ifelse(as.numeric(as.character(Min)) >= 51 & as.numeric(as.character(Min)) <= 110, "day",
+                                                ifelse(as.numeric(as.character(Min)) >= 111 & as.numeric(as.character(Min)) <= 122, "dusk", "night")))) %>% 
+             mutate_at(vars(ID:Min, time_period), factor)
 
 CN.data$NDVI <- ifelse(CN.data$Year==2019, raster::extract(ndvi2019, sp::SpatialPoints(CN.data[,c("long","lat")])),
                        raster::extract(ndvi2022, sp::SpatialPoints(CN.data[,c("long","lat")])))
@@ -99,7 +103,7 @@ str(CN.data)
 
 
 # reordering columns
-CN.data <- CN.data[,c(1,8,2,35,36,42,43,3:7,9:33,37:41,44,45,34)]
+CN.data <- CN.data[,c(1,8,2,35,36,46,3:7,47,9:33,37:41,49,48,42:45,34)]
 
 # saving
 write.csv(CN.data, "data/AcousticIndex_102022_v4.csv", row.names = F)
@@ -510,7 +514,7 @@ time.period.diff %>%
   scale_color_gradient("Effect size", low = "#F4A582", high = "#831529", na.value = NA)+
   guides(size = "none",
          colour = guide_colourbar(barheight = unit(45, "cm"))) +
-  ylab(expression(atop("Number of significantly different", "study sites pairs")))+xlab("Frequency bins (kHz)")+
+  ylab(expression(atop("Number of significantly different", "time period pairs")))+xlab("Frequency bins (kHz)")+
   facet_grid(local~index) +
   theme(axis.title = element_text(family = "serif", size = 44),
         axis.text.x = element_text(family = "serif", size = 36, angle = 90, hjust = 1),
@@ -533,7 +537,7 @@ time.period.diff.total <- data.frame(index = rep(c("H", "BGN", "AA", "ADI", "AEI
                                      effect.size = NA, n.sig = NA)
 
 c=1
-for (i in names(CN.data)[9:33]) {
+for (i in names(CN.data)[13:37]) {
   
   cnx.index <- CN.data %>% group_by(Local) %>% sample_n(size = 500, replace = T) %>% ungroup() %>% select(time_period, i)
   
@@ -576,7 +580,7 @@ time.period.diff.total %>%
   scale_color_gradient("Effect size", low = "#F4A582", high = "#831529", na.value = NA)+
   guides(size = "none",
          colour = guide_colourbar(barheight = unit(12, "cm"))) +
-  ylab(expression(atop("Number of significantly different", "study sites pairs")))+xlab("Frequency bins (kHz)")+
+  ylab(expression(atop("Number of significantly different", "time periods pairs")))+xlab("Frequency bins (kHz)")+
   facet_wrap(~index, nrow = 1) +
   theme(axis.title = element_text(family = "serif", size = 34),
         axis.text.x = element_text(family = "serif", size = 30, angle = 90, hjust = 1),
@@ -593,12 +597,113 @@ time.period.diff.total %>%
 
 dev.off()
 #
-
-
-
-
-
 #####
+
+
+##### modelling the effect of environmental traits on soundscape index ####
+#preparing data
+CN.data2 <- CN.data[!is.na(CN.data$precipitation),]
+CN.data2$alt <- scale(CN.data2$alt, center = F)
+CN.data2$distwater <- scale(CN.data2$distwater, center = F)
+CN.data2$distedge <- scale(CN.data2$distedge, center = F)
+CN.data2$distcanga <- scale(CN.data2$distcanga, center = F)
+CN.data2$distminning <- scale(CN.data2$distminning, center = F)
+CN.data2$treeheight <- scale(CN.data2$treeheight, center = F)
+CN.data2$NDVI <- scale(CN.data2$NDVI, center = F)
+CN.data2$precipitation <- scale(as.numeric(CN.data2$precipitation), center = F)
+CN.data2$temperature <- scale(as.numeric(CN.data2$temperature), center = F)
+CN.data2$humidity <- scale(as.numeric(CN.data2$humidity), center = F)
+CN.data2$wind <- scale(as.numeric(CN.data2$wind), center = F)
+CN.data2$month_year <- as.factor(paste0(CN.data2$Month, CN.data2$Year))
+
+#hist((CN.data2$BGNTotal*(-1))); range((CN.data2$BGNTotal*(-1)))
+#plot(fitdist((CN.data2$BGNTotal*(-1)), "pois"))  
+
+res1.BGN <- glmmTMB((BGNTotal*(-1)) ~ distwater
+                  + (1|Local:time_period), 
+                  family=poisson(link = "identity"), CN.data2)
+
+summary(res1.BGN)   
+
+res2.BGN <- glmmTMB((BGNTotal*(-1)) ~ distedge
+                    + (1|Local:time_period), 
+                    family=poisson(link = "identity"), CN.data2)
+
+summary(res2.BGN)    
+
+res3.BGN <- glmmTMB((BGNTotal*(-1)) ~ distcanga
+                    + (1|Local:time_period), 
+                    family=poisson(link = "identity"), CN.data2)
+
+summary(res3.BGN)     
+
+res4.BGN <- glmmTMB((BGNTotal*(-1)) ~ distminning
+                    + (1|Local:time_period), 
+                    family=poisson(link = "identity"), CN.data2)
+
+summary(res4.BGN)      
+
+res5.BGN <- glmmTMB((BGNTotal*(-1)) ~ treeheight
+                    + (1|Local:time_period), 
+                    family=poisson(link = "identity"), CN.data2)
+
+summary(res5.BGN)       
+
+res6.BGN <- glmmTMB((BGNTotal*(-1)) ~ NDVI
+                    + (1|Local:time_period), 
+                    family=poisson(link = "identity"), CN.data2)
+
+summary(res6.BGN)        
+
+res7.BGN <- glmmTMB((BGNTotal*(-1)) ~ precipitation
+                    + (1|Local:time_period), 
+                    family=poisson(link = "identity"), CN.data2)
+
+summary(res7.BGN)         
+
+res8.BGN <- glmmTMB((BGNTotal*(-1)) ~ temperature
+                    + (1|Local:time_period), 
+                    family=poisson(link = "identity"), CN.data2)
+
+summary(res8.BGN)          
+
+res9.BGN <- glmmTMB((BGNTotal*(-1)) ~ humidity
+                    + (1|Local:time_period), 
+                    family=poisson(link = "identity"), CN.data2)
+
+summary(res9.BGN)           
+
+res10.BGN <- glmmTMB((BGNTotal*(-1)) ~ wind
+                    + (1|Local:time_period), 
+                    family=poisson(link = "identity"), CN.data2)
+
+summary(res10.BGN)            
+
+res11.BGN <- glmmTMB((BGNTotal*(-1)) ~ distwater * treeheight * NDVI
+                     + precipitation + temperature + humidity + wind
+                     + distcanga + distminning
+                     + (1|Local:time_period), 
+                     family=poisson(link = "identity"), CN.data2)
+
+summary(res11.BGN) 
+
+res11.BGN.simres <- simulateResiduals(res11.BGN)
+plot(res11.BGN.simres)
+plot(allEffects(res11.BGN))
+
+res11.BGN.t <- broom.mixed::tidy(res11.BGN, conf.int = TRUE)
+res11.BGN.t <- transform(res11.BGN.t, term = sprintf("%s.%s", component, term))
+
+dwplot(res11.BGN.t, by_2sd=F,
+       dot_args = list(size = 5),
+       whisker_args = list(size = 2))+
+  geom_vline(xintercept=0, lty=2)+
+  xlab("Coefficient") + ylab("") +
+  theme(axis.title = element_text(family = "serif", size = 22),
+        axis.text.x = element_text(family = "serif", size = 20),
+        axis.text.y = element_text(family = "serif", size = 20),
+        axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
+        axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1))
 
 
 ##
