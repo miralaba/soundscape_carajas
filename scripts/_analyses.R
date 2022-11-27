@@ -37,15 +37,6 @@ CN.data.raw.ed2 <- CN.data.raw.ed2[,c(1:7,43,8:42,44)]
 #### exploratory ####
 # copy
 CN.data <- CN.data.raw.ed2
-# excluding NPeak variable
-# it was used to calculate acustic activity [AA*]
-# total correlation
-CN.data <- CN.data[,grep("NPeak", colnames(CN.data), invert = T)]
-
-# excluding S2N variable
-# it was calculated base on background noise [BGN*]
-# total correlation
-CN.data <- CN.data[,grep("S2N", colnames(CN.data), invert = T)]
 
 ## checking
 #head(CN.data);tail(CN.data)
@@ -66,7 +57,7 @@ weather <- weather %>%
                       Month = as.numeric(sub("^0+", "", substr(Data.Medicao, 6, 7))),
                       Day = as.numeric(sub("^0+", "", substr(Data.Medicao, 9, 10))),
                       Hour = as.numeric(rep(0:23, length.out=nrow(weather)))) %>% 
-               select(Year:Hour,PRECIPITACAO.TOTAL..HORARIO.mm.:VENTO..VELOCIDADE.HORARIA.m.s.)
+               dplyr::select(8:11,3:6)
 
 # NDVI (Normalized Difference Vegetation Index)
 # source: https://neo.gsfc.nasa.gov/view.php?datasetId=MOD_NDVI_M
@@ -103,7 +94,7 @@ str(CN.data)
 
 
 # reordering columns
-CN.data <- CN.data[,c(1,8,2,35,36,46,3:7,47,9:33,37:41,49,48,42:45,34)]
+CN.data <- CN.data[,c(1,8,2,45,46,59,3:7,60,9:43,47:51,61,62,55:58,52:54,44)]
 
 # saving
 write.csv(CN.data, "data/AcousticIndex_102022_v4.csv", row.names = F)
@@ -137,9 +128,11 @@ sampling.overview[sampling.overview$Local=="CN14" & sampling.overview$Year==2022
 # saving
 write.csv(sampling.overview, "results/sampling_by_point_by_year.csv", row.names = F)
 
+rm(list= ls()[(ls() %in% c("CN.location","ndvi2019","ndvi2022","treeheight","weather"))])
+gc()
 
 #### correlogram ####
-png("results/correlograms.png", width = 1920, height = 1920, units = "px", bg = "transparent")
+png("results/correlograms.png", width = 2560, height = 2560, units = "px", bg = "transparent")
 par(mfrow = c(5, 5))
 
 # frequency bin 1, dawn
@@ -448,14 +441,26 @@ corrplot(cor(CN.data[, grep("Total", names(CN.data))], method = "spearman", use 
 dev.off()
 #####
 
+# excluding variables: H, S2N, NPeak, AEI
+# they were built from other index (e.g., S2N from BGN)
+# or they were used to build other index (e.g., NPeak to AA)
+# and/or were highly correlated (H and AA and ADI)
+CN.data.total <- CN.data
 
+exclude <- c("HTotal", "S2NTotal", "NPeakTotal", "AEITotal",
+             "Hfbin1", "S2Nfbin1", "NPeakfbin1", "AEIfbin1",
+             "Hfbin2", "S2Nfbin2", "NPeakfbin2", "AEIfbin2",
+             "Hfbin3", "S2Nfbin3", "NPeakfbin3", "AEIfbin3",
+             "Hfbin4", "S2Nfbin4", "NPeakfbin4", "AEIfbin4")
+
+CN.data <- CN.data[,!colnames(CN.data) %in% exclude]
 
 #### difference between time period ####
 # creating data frame
 
-time.period.diff <- data.frame(index = rep(c("H", "BGN", "AA", "ADI", "AEI"), 70),
-                                frequency.bin = rep(rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 5), 14),
-                                local = rep(unique(CN.data$Local), each = 25),
+time.period.diff <- data.frame(index = rep(c("BGN", "AA", "ADI"), 70),
+                                frequency.bin = rep(rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 3), 14),
+                                local = rep(unique(CN.data$Local), each = 15),
                                 effect.size = NA, n.sig = NA)
 
 c=1
@@ -463,7 +468,7 @@ for (l in unique(CN.data$Local)) {
   
   cnx <- CN.data[CN.data$Local==l,]
   
-  for (i in names(CN.data)[13:37]) {
+  for (i in names(CN.data)[13:27]) {
     
     cnx.index <- cnx[sample(1:nrow(cnx), 500, replace = T), c(i,"time_period")]
     
@@ -497,7 +502,7 @@ for (l in unique(CN.data$Local)) {
 str(time.period.diff)
 
 time.period.diff <- time.period.diff %>% 
-                       mutate(index=factor(index, levels = c("AA", "ADI", "AEI", "BGN", "H")),
+                       mutate(index=factor(index, levels = c("AA", "ADI", "BGN")),
                               frequency.bin=factor(frequency.bin, levels = c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1")),
                               local=factor(local, levels = paste0("CN", seq(1:14))))
   
@@ -509,7 +514,7 @@ png("results/timeperioddifflocal.png", width = 1440, height = 2560, units = "px"
 time.period.diff %>%  
   ggplot(aes(frequency.bin, n.sig, colour = effect.size))+
   geom_point(size=12)+
-  geom_hline(data=time.period.diff.hline, aes(yintercept=n.sig), size=1, linetype='dashed') +
+  geom_hline(data=time.period.diff.hline, aes(yintercept=n.sig), linewidth=1, linetype='dashed') +
   scale_y_continuous(limits = c(0, 7), breaks = c(0, 2, 4, 6), expand = c(0.1,0.1)) +
   scale_color_gradient("Effect size", low = "#F4A582", high = "#831529", na.value = NA)+
   guides(size = "none",
@@ -519,8 +524,8 @@ time.period.diff %>%
   theme(axis.title = element_text(family = "serif", size = 44),
         axis.text.x = element_text(family = "serif", size = 36, angle = 90, hjust = 1),
         axis.text.y = element_text(family = "serif", size = 36),
-        axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
-        axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1),
+        axis.line.y = element_line(linewidth = 1), axis.line.x = element_line(linewidth = 1),
+        axis.ticks.y = element_line(linewidth = 1), axis.ticks.x = element_line(linewidth = 1),
         legend.title = element_text(family = "serif", size = 36),
         legend.text = element_text(family = "serif", size = 36),
         panel.background = element_blank(),
@@ -532,14 +537,14 @@ time.period.diff %>%
 dev.off()
 #
 
-time.period.diff.total <- data.frame(index = rep(c("H", "BGN", "AA", "ADI", "AEI"), 5),
-                                     frequency.bin = rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 5),
+time.period.diff.total <- data.frame(index = rep(c("BGN", "AA", "ADI"), 5),
+                                     frequency.bin = rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 3),
                                      effect.size = NA, n.sig = NA)
 
 c=1
-for (i in names(CN.data)[13:37]) {
+for (i in names(CN.data)[13:27]) {
   
-  cnx.index <- CN.data %>% group_by(Local) %>% sample_n(size = 500, replace = T) %>% ungroup() %>% select(time_period, i)
+  cnx.index <- CN.data %>% group_by(Local) %>% sample_n(size = 500, replace = T) %>% ungroup() %>% dplyr::select(time_period, i)
   
   if (all(is.na(cnx.index[,i])) | all(cnx.index[,i]==0)) {
     
@@ -564,7 +569,7 @@ for (i in names(CN.data)[13:37]) {
 str(time.period.diff.total)
 
 time.period.diff.total <- time.period.diff.total %>% 
-                          mutate(index=factor(index, levels = c("AA", "ADI", "AEI", "BGN", "H")),
+                          mutate(index=factor(index, levels = c("AA", "ADI", "BGN")),
                                  frequency.bin=factor(frequency.bin, levels = c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1")))
 
 
@@ -601,7 +606,7 @@ dev.off()
 
 
 ##### modelling the effect of environmental traits on soundscape index ####
-#preparing data
+## preparing data -- regional
 CN.data2 <- CN.data[!is.na(CN.data$precipitation),]
 CN.data2$alt <- scale(CN.data2$alt, center = F)
 CN.data2$distwater <- scale(CN.data2$distwater, center = F)
