@@ -20,6 +20,7 @@ library(DHARMa)
 library(effects)
 library(broom.mixed)
 library(dotwhisker)
+library(cowplot)
 #library(lme4)
 #library(multcomp)
 #library(multcompView)
@@ -447,20 +448,20 @@ dev.off()
 # and/or were highly correlated (H and AA and ADI)
 CN.data.total <- CN.data
 
-exclude <- c("HTotal", "S2NTotal", "NPeakTotal", "AEITotal",
-             "Hfbin1", "S2Nfbin1", "NPeakfbin1", "AEIfbin1",
-             "Hfbin2", "S2Nfbin2", "NPeakfbin2", "AEIfbin2",
-             "Hfbin3", "S2Nfbin3", "NPeakfbin3", "AEIfbin3",
-             "Hfbin4", "S2Nfbin4", "NPeakfbin4", "AEIfbin4")
+exclude <- c("S2NTotal", "NPeakTotal", "ADITotal",
+             "S2Nfbin1", "NPeakfbin1", "ADIfbin1",
+             "S2Nfbin2", "NPeakfbin2", "ADIfbin2",
+             "S2Nfbin3", "NPeakfbin3", "ADIfbin3",
+             "S2Nfbin4", "NPeakfbin4", "ADIfbin4")
 
 CN.data <- CN.data[,!colnames(CN.data) %in% exclude]
 
 #### difference between time period ####
 # creating data frame
 
-time.period.diff <- data.frame(index = rep(c("BGN", "AA", "ADI"), 70),
-                                frequency.bin = rep(rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 3), 14),
-                                local = rep(unique(CN.data$Local), each = 15),
+time.period.diff <- data.frame(index = rep(c("H", "BGN", "AA", "AEI"), 70),
+                                frequency.bin = rep(rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 4), 14),
+                                local = rep(unique(CN.data$Local), each = 20),
                                 effect.size = NA, n.sig = NA)
 
 c=1
@@ -468,7 +469,7 @@ for (l in unique(CN.data$Local)) {
   
   cnx <- CN.data[CN.data$Local==l,]
   
-  for (i in names(CN.data)[13:27]) {
+  for (i in names(CN.data)[13:32]) {
     
     cnx.index <- cnx[sample(1:nrow(cnx), 500, replace = T), c(i,"time_period")]
     
@@ -502,7 +503,7 @@ for (l in unique(CN.data$Local)) {
 str(time.period.diff)
 
 time.period.diff <- time.period.diff %>% 
-                       mutate(index=factor(index, levels = c("AA", "ADI", "BGN")),
+                       mutate(index=factor(index, levels = c("AA", "AEI", "BGN", "H")),
                               frequency.bin=factor(frequency.bin, levels = c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1")),
                               local=factor(local, levels = paste0("CN", seq(1:14))))
   
@@ -537,12 +538,12 @@ time.period.diff %>%
 dev.off()
 #
 
-time.period.diff.total <- data.frame(index = rep(c("BGN", "AA", "ADI"), 5),
-                                     frequency.bin = rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 3),
+time.period.diff.total <- data.frame(index = rep(c("H", "BGN", "AA", "AEI"), 5),
+                                     frequency.bin = rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 4),
                                      effect.size = NA, n.sig = NA)
 
 c=1
-for (i in names(CN.data)[13:27]) {
+for (i in names(CN.data)[13:32]) {
   
   cnx.index <- CN.data %>% group_by(Local) %>% sample_n(size = 500, replace = T) %>% ungroup() %>% dplyr::select(time_period, i)
   
@@ -569,7 +570,7 @@ for (i in names(CN.data)[13:27]) {
 str(time.period.diff.total)
 
 time.period.diff.total <- time.period.diff.total %>% 
-                          mutate(index=factor(index, levels = c("AA", "ADI", "BGN")),
+                          mutate(index=factor(index, levels = c("AA", "AEI", "BGN", "H")),
                                  frequency.bin=factor(frequency.bin, levels = c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1")))
 
 
@@ -580,7 +581,7 @@ png("results/timeperioddifftotal.png", width = 2400, height = 640, units = "px",
 time.period.diff.total %>%  
   ggplot(aes(frequency.bin, n.sig, colour = effect.size))+
   geom_point(size=12)+
-  geom_hline(data=time.period.diff.total.hline, aes(yintercept=n.sig), size=1, linetype='dashed') +
+  geom_hline(data=time.period.diff.total.hline, aes(yintercept=n.sig), linewidth=1, linetype='dashed') +
   scale_y_continuous(limits = c(0, 7), breaks = c(0, 2, 4, 6), expand = c(0.1,0.1)) +
   scale_color_gradient("Effect size", low = "#F4A582", high = "#831529", na.value = NA)+
   guides(size = "none",
@@ -590,8 +591,8 @@ time.period.diff.total %>%
   theme(axis.title = element_text(family = "serif", size = 34),
         axis.text.x = element_text(family = "serif", size = 30, angle = 90, hjust = 1),
         axis.text.y = element_text(family = "serif", size = 30),
-        axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
-        axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1),
+        axis.line.y = element_line(linewidth = 1), axis.line.x = element_line(linewidth = 1),
+        axis.ticks.y = element_line(linewidth = 1), axis.ticks.x = element_line(linewidth = 1),
         legend.title = element_text(family = "serif", size = 30),
         legend.text = element_text(family = "serif", size = 30),
         panel.background = element_blank(),
@@ -611,7 +612,7 @@ gc()
 
 ##### modelling the effect of environmental traits on soundscape index ####
 ## preparing data -- regional
-CN.data.regional <- CN.data[!is.na(CN.data$precipitation),c(1:15,28:38)]
+CN.data.regional <- CN.data[!is.na(CN.data$precipitation),c(1:16,33:43)]
 
 CN.data.regional$alt <- scale(CN.data.regional$alt, center = F)
 CN.data.regional$distwater <- scale(CN.data.regional$distwater, center = F)
@@ -625,42 +626,44 @@ CN.data.regional$temperature <- scale(as.numeric(CN.data.regional$temperature), 
 CN.data.regional$humidity <- scale(as.numeric(CN.data.regional$humidity), center = F)
 CN.data.regional$wind <- scale(as.numeric(CN.data.regional$wind), center = F)
 
-#hist(CN.data.regional$AATotal); range(CN.data.regional$AATotal)
-#plot(fitdist(CN.data.regional$AATotal, "beta"))
 
-res1.AA <- glmmTMB(AATotal ~ distwater + (1|Local:time_period), family=beta_family(), CN.data.regional)
+#subsetting
+CN.data.regional.modelfit <- CN.data.regional %>% group_by(Local, time_period) %>% sample_n(size = 50, replace = T) %>% ungroup()
+
+#hist(CN.data.regional.modelfit$AATotal); range(CN.data.regional.modelfit$AATotal)
+#plot(fitdist(CN.data.regional.modelfit$AATotal, "beta"))
+res1.AA <- glmmTMB(AATotal ~ distwater + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
 summary(res1.AA)   
 
-res2.AA <- glmmTMB(AATotal ~ distedge + (1|Local:time_period), family=beta_family(), CN.data.regional)
+res2.AA <- glmmTMB(AATotal ~ distedge + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
 summary(res2.AA)    
 
-res3.AA <- glmmTMB(AATotal ~ distcanga + (1|Local:time_period), family=beta_family(), CN.data.regional)
+res3.AA <- glmmTMB(AATotal ~ distcanga + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
 summary(res3.AA)     
 
-res4.AA <- glmmTMB(AATotal ~ distminning + (1|Local:time_period), family=beta_family(), CN.data.regional)
+res4.AA <- glmmTMB(AATotal ~ distminning + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
 summary(res4.AA)      
 
-res5.AA <- glmmTMB(AATotal ~ treeheight + (1|Local:time_period), family=beta_family(), CN.data.regional)
+res5.AA <- glmmTMB(AATotal ~ treeheight + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
 summary(res5.AA)       
 
-res6.AA <- glmmTMB(AATotal ~ NDVI + (1|Local:time_period), family=beta_family(), CN.data.regional)
+res6.AA <- glmmTMB(AATotal ~ NDVI + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
 summary(res6.AA)        
 
-res7.AA <- glmmTMB(AATotal ~ precipitation + (1|Local:time_period), family=beta_family(), CN.data.regional)
+res7.AA <- glmmTMB(AATotal ~ precipitation + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
 summary(res7.AA)         
 
-res8.AA <- glmmTMB(AATotal ~ temperature + (1|Local:time_period), family=beta_family(), CN.data.regional)
+res8.AA <- glmmTMB(AATotal ~ temperature + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
 summary(res8.AA)          
 
-res9.AA <- glmmTMB(AATotal ~ humidity + (1|Local:time_period), family=beta_family(), CN.data.regional)
+res9.AA <- glmmTMB(AATotal ~ humidity + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
 summary(res9.AA)           
 
-res10.AA <- glmmTMB(AATotal ~ wind + (1|Local:time_period), family=beta_family(), CN.data.regional)
+res10.AA <- glmmTMB(AATotal ~ wind + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
 summary(res10.AA)            
 
-res11.AA <- glmmTMB(AATotal ~ distwater * humidity * precipitation + temperature + wind
-                    + (1|Local:time_period), 
-                    family=beta_family(), CN.data.regional)
+res11.AA <- glmmTMB(AATotal ~ distwater + humidity + distedge + temperature + (1|Local:time_period), 
+                    family=beta_family(), CN.data.regional.modelfit)
 summary(res11.AA) 
 
 res11.AA.simres <- simulateResiduals(res11.AA)
@@ -672,149 +675,411 @@ res11.AA.t <- broom.mixed::tidy(res11.AA, conf.int = TRUE)
 res11.AA.t <- transform(res11.AA.t, term = sprintf("%s.%s", component, term))
 res11.AA.t$group <- "AA"
 
-res11.AA.graph <- dwplot(res11.AA.t[1:10,], by_2sd=F,
+res11.AA.graph <- dwplot(res11.AA.t[1:5,], by_2sd=F,
                         dot_args = list(size = 5),
                         whisker_args = list(size = 2))+
                    geom_vline(xintercept=0, lty=2)+
                    scale_y_discrete(labels = c("cond.(Intercept)"="Intercept", "cond.distwater"="Distance from water",
-                                               "cond.humidity" = "Air humidity", "cond.precipitation"="Precipitation",
-                                               "cond.temperature"="Temperature", "cond.wind"="Wind velocity",
-                                               "cond.distwater:humidity"="Distance from water * Air humidity",
-                                               "cond.distwater:precipitation"="Distance from water * Precipitation",
-                                               "cond.humidity:precipitation"="Air humidity * Precipitation",
-                                               "cond.distwater:humidity:precipitation"="Distance from water * Air humidity * Precipitation"))+
-                   xlab("Coefficient") + ylab("") +
-                   theme(axis.title = element_text(family = "serif", size = 22),
+                                               "cond.humidity" = "Air humidity", "cond.distedge"="Distance from edge",
+                                               "cond.temperature"="Temperature",
+                                               "cond.distwater:humidity"="Distance from water * Air humidity"))+
+                   labs(title = "AA") + xlab("") + ylab("") +
+                   theme(plot.title = element_text(family = "serif", size = 26, hjust = .5),
+                         axis.title = element_text(family = "serif", size = 22),
                          axis.text.x = element_text(family = "serif", size = 20),
                          axis.text.y = element_text(family = "serif", size = 20),
                          axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
-                         axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1))
+                         axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1),
+                         panel.background = element_blank())
 
 
 ##
 
-#hist(CN.data.regional$ADITotal); range(CN.data.regional$ADITotal)
-#plot(fitdist(CN.data.regional$ADITotal, "logis"))
+#hist(CN.data.regional.modelfit$AEITotal); range(CN.data.regional.modelfit$AEITotal)
+#plot(fitdist(CN.data.regional.modelfit.modelfit$AEITotal, "beta"))
 
-res1.ADI <- glmmTMB(sqrt(ADITotal) ~ distwater + (1|Local:time_period), family=Gamma(), CN.data.regional)
-summary(res1.ADI)   
+res1.AEI <- glmmTMB(AEITotal ~ distwater + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res1.AEI)   
 
-res2.ADI <- glmmTMB(sqrt(ADITotal) ~ distedge + (1|Local:time_period), family=Gamma(), CN.data.regional)
-summary(res2.ADI)    
+res2.AEI <- glmmTMB(AEITotal ~ distedge + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res2.AEI)    
 
-res3.ADI <- glmmTMB(sqrt(ADITotal) ~ distcanga + (1|Local:time_period), family=Gamma(), CN.data.regional)
-summary(res3.ADI)     
+res3.AEI <- glmmTMB(AEITotal ~ distcanga + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res3.AEI)     
 
-res4.ADI <- glmmTMB(sqrt(ADITotal) ~ distminning + (1|Local:time_period), family=Gamma(), CN.data.regional)
-summary(res4.ADI)      
+res4.AEI <- glmmTMB(AEITotal ~ distminning + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res4.AEI)      
 
-res5.ADI <- glmmTMB(sqrt(ADITotal) ~ treeheight + (1|Local:time_period), family=Gamma(), CN.data.regional)
-summary(res5.ADI)       
+res5.AEI <- glmmTMB(AEITotal ~ treeheight + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res5.AEI)       
 
-res6.ADI <- glmmTMB(ADITotal ~ NDVI + (1|Local:time_period), family=gaussian(link = "logit"), CN.data.regional)
-summary(res6.ADI)        
+res6.AEI <- glmmTMB(AEITotal ~ NDVI + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res6.AEI)        
 
-res7.ADI <- glmmTMB(ADITotal ~ precipitation + (1|Local:time_period), family=gaussian(link = "logit"), CN.data.regional)
-summary(res7.ADI)         
+res7.AEI <- glmmTMB(AEITotal ~ precipitation + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res7.AEI)         
 
-res8.ADI <- glmmTMB(ADITotal ~ temperature + (1|Local:time_period), family=gaussian(link = "logit"), CN.data.regional)
-summary(res8.ADI)          
+res8.AEI <- glmmTMB(AEITotal ~ temperature + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res8.AEI)          
 
-res9.ADI <- glmmTMB(ADITotal ~ humidity + (1|Local:time_period), family=gaussian(link = "logit"), CN.data.regional)
-summary(res9.ADI)           
+res9.AEI <- glmmTMB(AEITotal ~ humidity + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res9.AEI)           
 
-res10.ADI <- glmmTMB(ADITotal ~ wind + (1|Local:time_period), family=gaussian(link = "logit"), CN.data.regional)
-summary(res10.ADI)            
+res10.AEI <- glmmTMB(AEITotal ~ wind + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res10.AEI)            
 
-res11.ADI <- glmmTMB(ADITotal ~ distwater * treeheight * NDVI
-                    + precipitation + temperature + humidity + wind
-                    + distcanga + distminning
-                    + (1|Local:time_period), 
-                    family=gaussian(link = "logit"), CN.data.regional)
-summary(res11.ADI) 
+res11.AEI <- glmmTMB(AEITotal ~ distwater + NDVI + temperature * humidity + (1|Local:time_period), 
+                    family=beta_family(), CN.data.regional.modelfit)
+summary(res11.AEI) 
 
-res11.ADI.simres <- simulateResiduals(res11.ADI)
-plot(res11.ADI.simres)
-plot(allEffects(res11.ADI))
+res11.AEI.simres <- simulateResiduals(res11.AEI)
+plot(res11.AEI.simres)
+plot(allEffects(res11.AEI, residuals = T))
 
-res11.ADI.t <- broom.mixed::tidy(res11.ADI, conf.int = TRUE)
-res11.ADI.t <- transform(res11.ADI.t, term = sprintf("%s.%s", component, term))
+res11.AEI.t <- broom.mixed::tidy(res11.AEI, conf.int = TRUE)
+res11.AEI.t <- transform(res11.AEI.t, term = sprintf("%s.%s", component, term))
+res11.AEI.t$group <- "AEI"
 
-dwplot(res11.ADI.t, by_2sd=F,
-       dot_args = list(size = 5),
-       whisker_args = list(size = 2))+
-  geom_vline(xintercept=0, lty=2)+
-  xlab("Coefficient") + ylab("") +
-  theme(axis.title = element_text(family = "serif", size = 22),
-        axis.text.x = element_text(family = "serif", size = 20),
-        axis.text.y = element_text(family = "serif", size = 20),
-        axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
-        axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1))
 
+res11.AEI.graph <- dwplot(res11.AEI.t[1:6,], by_2sd=F,
+                          dot_args = list(size = 5),
+                          whisker_args = list(size = 2))+
+                    geom_vline(xintercept=0, lty=2)+
+                    scale_y_discrete(labels = c("cond.(Intercept)"="Intercept", "cond.distwater"="Distance from water",
+                                                "cond.humidity"="Air humidity","cond.temperature"="Temperature",
+                                                "cond.NDVI" = "NDVI", 
+                                                "cond.temperature:humidity"="Temperature * Air humidity"))+
+                    labs(title = "AEI") + xlab("") + ylab("") +
+                    theme(plot.title = element_text(family = "serif", size = 26, hjust = .5),
+                          axis.title = element_text(family = "serif", size = 22),
+                          axis.text.x = element_text(family = "serif", size = 20),
+                          axis.text.y = element_text(family = "serif", size = 20),
+                          axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
+                          axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1),
+                          panel.background = element_blank())
+                   
 
 ##
 
-#hist((CN.data.regional$BGNTotal*(-1))); range((CN.data.regional$BGNTotal*(-1)))
-#plot(fitdist((CN.data.regional$BGNTotal*(-1)), "pois"))  
+#hist((CN.data.regional.modelfit$BGNTotal*(-1))); range((CN.data.regional.modelfit$BGNTotal*(-1)))
+#plot(fitdist((CN.data.regional.modelfit$BGNTotal*(-1)), "pois"))  
 
-res1.BGN <- glmmTMB((BGNTotal*(-1)) ~ distwater + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
+res1.BGN <- glmmTMB((BGNTotal*(-1)) ~ distwater + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional.modelfit)
 summary(res1.BGN)   
 
-res2.BGN <- glmmTMB((BGNTotal*(-1)) ~ distedge + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
+res2.BGN <- glmmTMB((BGNTotal*(-1)) ~ distedge + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional.modelfit)
 summary(res2.BGN)    
 
-res3.BGN <- glmmTMB((BGNTotal*(-1)) ~ distcanga + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
+res3.BGN <- glmmTMB((BGNTotal*(-1)) ~ distcanga + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional.modelfit)
 summary(res3.BGN)     
 
-res4.BGN <- glmmTMB((BGNTotal*(-1)) ~ distminning + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
+res4.BGN <- glmmTMB((BGNTotal*(-1)) ~ distminning + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional.modelfit)
 summary(res4.BGN)      
 
-res5.BGN <- glmmTMB((BGNTotal*(-1)) ~ treeheight + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
+res5.BGN <- glmmTMB((BGNTotal*(-1)) ~ treeheight + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional.modelfit)
 summary(res5.BGN)       
 
-res6.BGN <- glmmTMB((BGNTotal*(-1)) ~ NDVI + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
+res6.BGN <- glmmTMB((BGNTotal*(-1)) ~ NDVI + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional.modelfit)
 summary(res6.BGN)        
 
-res7.BGN <- glmmTMB((BGNTotal*(-1)) ~ precipitation + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
+res7.BGN <- glmmTMB((BGNTotal*(-1)) ~ precipitation + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional.modelfit)
 summary(res7.BGN)         
 
-res8.BGN <- glmmTMB((BGNTotal*(-1)) ~ temperature + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
+res8.BGN <- glmmTMB((BGNTotal*(-1)) ~ temperature + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional.modelfit)
 summary(res8.BGN)          
 
-res9.BGN <- glmmTMB((BGNTotal*(-1)) ~ humidity + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
+res9.BGN <- glmmTMB((BGNTotal*(-1)) ~ humidity + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional.modelfit)
 summary(res9.BGN)           
 
-res10.BGN <- glmmTMB((BGNTotal*(-1)) ~ wind + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
+res10.BGN <- glmmTMB((BGNTotal*(-1)) ~ wind + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional.modelfit)
 summary(res10.BGN)            
 
-res11.BGN <- glmmTMB((BGNTotal*(-1)) ~ distwater * treeheight * NDVI
-                     + precipitation + temperature + humidity + wind
-                     + distcanga + distminning
-                     + (1|Local:time_period), 
-                     family=poisson(link = "identity"), CN.data.regional)
+res11.BGN <- glmmTMB((BGNTotal*(-1)) ~ distwater + precipitation + distedge + distcanga + NDVI + (1|Local:time_period), 
+                     family=poisson(link = "identity"), CN.data.regional.modelfit)
 
 summary(res11.BGN) 
 
 res11.BGN.simres <- simulateResiduals(res11.BGN)
 plot(res11.BGN.simres)
-plot(allEffects(res11.BGN))
+plot(allEffects(res11.BGN, residuals = T))
 
 res11.BGN.t <- broom.mixed::tidy(res11.BGN, conf.int = TRUE)
 res11.BGN.t <- transform(res11.BGN.t, term = sprintf("%s.%s", component, term))
+res11.BGN.t$group <- "BGN"
 
-dwplot(res11.BGN.t, by_2sd=F,
-       dot_args = list(size = 5),
-       whisker_args = list(size = 2))+
-  geom_vline(xintercept=0, lty=2)+
-  xlab("Coefficient") + ylab("") +
-  theme(axis.title = element_text(family = "serif", size = 22),
-        axis.text.x = element_text(family = "serif", size = 20),
-        axis.text.y = element_text(family = "serif", size = 20),
-        axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
-        axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1))
+res11.BGN.graph <- dwplot(res11.BGN.t[1:6,], by_2sd=F,
+                          dot_args = list(size = 5),
+                          whisker_args = list(size = 2))+
+                   geom_vline(xintercept=0, lty=2)+
+                   scale_y_discrete(labels = c("cond.(Intercept)"="Intercept", "cond.distwater"="Distance from water",
+                                               "cond.precipitation"="Precipitation","cond.distedge" = "Distance from edge",
+                                               "cond.NDVI"="NDVI", "cond.distcanga" = "Distance from canga"))+
+                   labs(title = "BGN") + xlab("Coefficient") + ylab("") +
+                   theme(plot.title = element_text(family = "serif", size = 26, hjust = .5),
+                         axis.title = element_text(family = "serif", size = 22),
+                         axis.text.x = element_text(family = "serif", size = 20),
+                         axis.text.y = element_text(family = "serif", size = 20),
+                         axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
+                         axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1),
+                         panel.background = element_blank())
+
+##
+
+#hist(CN.data.regional.modelfit$HTotal); range(CN.data.regional.modelfit$HTotal)
+#plot(fitdist(CN.data.regional.modelfit$HTotal, "beta"))
+res1.H <- glmmTMB(HTotal ~ distwater + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res1.H)   
+
+res2.H <- glmmTMB(HTotal ~ distedge + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res2.H)    
+
+res3.H <- glmmTMB(HTotal ~ distcanga + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res3.H)     
+
+res4.H <- glmmTMB(HTotal ~ distminning + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res4.H)      
+
+res5.H <- glmmTMB(HTotal ~ treeheight + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res5.H)       
+
+res6.H <- glmmTMB(HTotal ~ NDVI + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res6.H)        
+
+res7.H <- glmmTMB(HTotal ~ precipitation + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res7.H)         
+
+res8.H <- glmmTMB(HTotal ~ temperature + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res8.H)          
+
+res9.H <- glmmTMB(HTotal ~ humidity + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res9.H)           
+
+res10.H <- glmmTMB(HTotal ~ wind + (1|Local:time_period), family=beta_family(), CN.data.regional.modelfit)
+summary(res10.H)            
+
+res11.H <- glmmTMB(HTotal ~ distwater + humidity + distedge + temperature + treeheight + (1|Local:time_period), 
+                   family=beta_family(), CN.data.regional.modelfit)
+summary(res11.H) 
+
+res11.H.simres <- simulateResiduals(res11.H)
+plot(res11.H.simres)
+res11.H.alleffects <- allEffects(res11.H, residuals = T)
+plot(res11.H.alleffects)
+
+res11.H.t <- broom.mixed::tidy(res11.H, conf.int = TRUE)
+res11.H.t <- transform(res11.H.t, term = sprintf("%s.%s", component, term))
+res11.H.t$group <- "H"
+
+res11.H.graph <- dwplot(res11.H.t[1:6,], by_2sd=F,
+                        dot_args = list(size = 5),
+                        whisker_args = list(size = 2))+
+                 geom_vline(xintercept=0, lty=2)+
+                 scale_y_discrete(labels = c("cond.(Intercept)"="Intercept", "cond.distwater"="Distance from water",
+                                             "cond.humidity" = "Air humidity", "cond.distedge"="Distance from edge",
+                                             "cond.temperature"="Temperature",
+                                             "cond.treeheight"="Tree height"))+
+                 labs(title = "H") + xlab("Coefficient") + ylab("") +
+                 theme(plot.title = element_text(family = "serif", size = 26, hjust = .5),
+                       axis.title = element_text(family = "serif", size = 22),
+                       axis.text.x = element_text(family = "serif", size = 20),
+                       axis.text.y = element_text(family = "serif", size = 20),
+                       axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
+                       axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1),
+                       panel.background = element_blank())
 
 
 ##
+
+png("results/regionalenvironmentaleffects.png", width = 1280, height = 720, units = "px", bg = "transparent")
+plot_grid(res11.AA.graph, res11.AEI.graph, res11.BGN.graph, res11.H.graph, nrow=2)
+dev.off()
+
+rm(list= ls()[(ls() %in% grep("res", ls(),value = T))])
+gc()
+#####
+
+
+
+##### modelling the effect of environmental traits on soundscape index ####
+## preparing data -- local
+CN.data.local <- CN.data[!is.na(CN.data$n_trees),c(1:16,44:46)]
+
+#subsetting
+CN.data.local.modelfit <- CN.data.local %>% group_by(Local, time_period) %>% sample_n(size = 45, replace = T) %>% ungroup()
+
+#hist(CN.data.local.modelfit$AATotal); range(CN.data.local.modelfit$AATotal)
+#plot(fitdist(CN.data.local.modelfit$AATotal, "beta"))
+res1.AA <- glmmTMB(AATotal ~ n_trees + (1|Local:time_period), family=beta_family(), CN.data.local.modelfit)
+summary(res1.AA)   
+
+res2.AA <- glmmTMB(AATotal ~ n_vines + (1|Local:time_period), family=beta_family(), CN.data.local.modelfit)
+summary(res2.AA)    
+
+res3.AA <- glmmTMB(AATotal ~ n_palmtrees + (1|Local:time_period), family=beta_family(), CN.data.local.modelfit)
+summary(res3.AA)     
+
+res4.AA <- glmmTMB(AATotal ~ n_trees + n_palmtrees + (1|Local:time_period), family=beta_family(), CN.data.local.modelfit)
+summary(res4.AA)      
+
+
+res4.AA.simres <- simulateResiduals(res4.AA)
+plot(res4.AA.simres)
+res4.AA.alleffects <- allEffects(res4.AA, residuals = T)
+plot(res4.AA.alleffects)
+
+res4.AA.t <- broom.mixed::tidy(res4.AA, conf.int = TRUE)
+res4.AA.t <- transform(res4.AA.t, term = sprintf("%s.%s", component, term))
+res4.AA.t$group <- "AA"
+
+res4.AA.graph <- dwplot(res4.AA.t[1:3,], by_2sd=F,
+                         dot_args = list(size = 5),
+                         whisker_args = list(size = 2))+
+  geom_vline(xintercept=0, lty=2)+
+  scale_y_discrete(labels = c("cond.(Intercept)"="Intercept", "cond.n_trees"="Number of trees",
+                              "cond.n_palmtrees"="Number of palmtrees"))+
+  labs(title = "AA") + xlab("") + ylab("") +
+  theme(plot.title = element_text(family = "serif", size = 26, hjust = .5),
+        axis.title = element_text(family = "serif", size = 22),
+        axis.text.x = element_text(family = "serif", size = 20),
+        axis.text.y = element_text(family = "serif", size = 20),
+        axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
+        axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1),
+        panel.background = element_blank())
+
+
+##
+
+#hist(CN.data.local.modelfit$AEITotal); range(CN.data.local.modelfit$AEITotal)
+#plot(fitdist(CN.data.local.modelfit$AEITotal, "beta"))
+
+res1.AEI <- glmmTMB(AEITotal ~ n_trees + (1|Local:time_period), family=beta_family(), CN.data.local.modelfit)
+summary(res1.AEI)   
+
+res2.AEI <- glmmTMB(AEITotal ~ n_vines + (1|Local:time_period), family=beta_family(), CN.data.local.modelfit)
+summary(res2.AEI)    
+
+res3.AEI <- glmmTMB(AEITotal ~ n_palmtrees + (1|Local:time_period), family=beta_family(), CN.data.local.modelfit)
+summary(res3.AEI)     
+
+res4.AEI <- glmmTMB(AEITotal ~ n_trees + n_palmtrees + (1|Local:time_period), family=beta_family(), CN.data.local.modelfit)
+summary(res4.AEI)      
+
+
+res4.AEI.simres <- simulateResiduals(res4.AEI)
+plot(res4.AEI.simres)
+res4.AEI.alleffects <- allEffects(res4.AEI, residuals = T)
+plot(res4.AEI.alleffects)
+
+res4.AEI.t <- broom.mixed::tidy(res4.AEI, conf.int = TRUE)
+res4.AEI.t <- transform(res4.AEI.t, term = sprintf("%s.%s", component, term))
+res4.AEI.t$group <- "AEI"
+
+res4.AEI.graph <- dwplot(res4.AEI.t[1:3,], by_2sd=F,
+                        dot_args = list(size = 5),
+                        whisker_args = list(size = 2))+
+  geom_vline(xintercept=0, lty=2)+
+  scale_y_discrete(labels = c("cond.(Intercept)"="Intercept", "cond.n_trees"="Number of trees",
+                              "cond.n_palmtrees"="Number of palmtrees"))+
+  labs(title = "AEI") + xlab("") + ylab("") +
+  theme(plot.title = element_text(family = "serif", size = 26, hjust = .5),
+        axis.title = element_text(family = "serif", size = 22),
+        axis.text.x = element_text(family = "serif", size = 20),
+        axis.text.y = element_text(family = "serif", size = 20),
+        axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
+        axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1),
+        panel.background = element_blank())
+
+
+##
+
+#hist((CN.data.local.modelfit$BGNTotal*(-1))); range((CN.data.local.modelfit$BGNTotal*(-1)))
+#plot(fitdist((CN.data.local.modelfit$BGNTotal*(-1)), "pois"))  
+
+res1.BGN <- glmmTMB((BGNTotal*(-1)) ~ n_trees + (1|Local:time_period), family=poisson(link = "identity"), CN.data.local.modelfit)
+summary(res1.BGN)   
+
+res2.BGN <- glmmTMB((BGNTotal*(-1)) ~ n_vines + (1|Local:time_period), family=poisson(link = "identity"), CN.data.local.modelfit)
+summary(res2.BGN)    
+
+res3.BGN <- glmmTMB((BGNTotal*(-1)) ~ n_palmtrees + (1|Local:time_period), family=poisson(link = "identity"), CN.data.local.modelfit)
+summary(res3.BGN)     
+
+res4.BGN <- glmmTMB((BGNTotal*(-1)) ~ n_trees + n_palmtrees + (1|Local:time_period), family=poisson(link = "identity"), CN.data.local.modelfit)
+summary(res4.BGN)      
+
+res4.BGN.simres <- simulateResiduals(res4.BGN)
+plot(res4.BGN.simres)
+plot(allEffects(res4.BGN, residuals = T))
+
+res4.BGN.t <- broom.mixed::tidy(res4.BGN, conf.int = TRUE)
+res4.BGN.t <- transform(res4.BGN.t, term = sprintf("%s.%s", component, term))
+res4.BGN.t$group <- "BGN"
+
+res4.BGN.graph <- dwplot(res4.BGN.t[1:3,], by_2sd=F,
+                          dot_args = list(size = 5),
+                          whisker_args = list(size = 2))+
+  geom_vline(xintercept=0, lty=2)+
+  scale_y_discrete(labels = c("cond.(Intercept)"="Intercept", "cond.n_trees"="Number of trees",
+                              "cond.n_palmtrees"="Number of palmtrees"))+
+  labs(title = "BGN") + xlab("Coefficient") + ylab("") +
+  theme(plot.title = element_text(family = "serif", size = 26, hjust = .5),
+        axis.title = element_text(family = "serif", size = 22),
+        axis.text.x = element_text(family = "serif", size = 20),
+        axis.text.y = element_text(family = "serif", size = 20),
+        axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
+        axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1),
+        panel.background = element_blank())
+
+##
+
+#hist(CN.data.local.modelfit$HTotal); range(CN.data.local.modelfit$HTotal)
+#plot(fitdist(CN.data.local.modelfit$HTotal, "beta"))
+res1.H <- glmmTMB(HTotal ~ n_trees + (1|Local:time_period), family=beta_family(), CN.data.local.modelfit)
+summary(res1.H)   
+
+res2.H <- glmmTMB(HTotal ~ n_vines + (1|Local:time_period), family=beta_family(), CN.data.local.modelfit)
+summary(res2.H)    
+
+res3.H <- glmmTMB(HTotal ~ n_palmtrees + (1|Local:time_period), family=beta_family(), CN.data.local.modelfit)
+summary(res3.H)     
+
+res4.H <- glmmTMB(HTotal ~ n_trees + n_palmtrees + (1|Local:time_period), family=beta_family(), CN.data.local.modelfit)
+summary(res4.H)      
+
+res4.H.simres <- simulateResiduals(res4.H)
+plot(res4.H.simres)
+res4.H.alleffects <- allEffects(res4.H, residuals = T)
+plot(res4.H.alleffects)
+
+res4.H.t <- broom.mixed::tidy(res4.H, conf.int = TRUE)
+res4.H.t <- transform(res4.H.t, term = sprintf("%s.%s", component, term))
+res4.H.t$group <- "H"
+
+res4.H.graph <- dwplot(res4.H.t[1:3,], by_2sd=F,
+                        dot_args = list(size = 5),
+                        whisker_args = list(size = 2))+
+  geom_vline(xintercept=0, lty=2)+
+  scale_y_discrete(labels = c("cond.(Intercept)"="Intercept", "cond.n_trees"="Number of trees",
+                              "cond.n_palmtrees"="Number of palmtrees"))+
+  labs(title = "H") + xlab("Coefficient") + ylab("") +
+  theme(plot.title = element_text(family = "serif", size = 26, hjust = .5),
+        axis.title = element_text(family = "serif", size = 22),
+        axis.text.x = element_text(family = "serif", size = 20),
+        axis.text.y = element_text(family = "serif", size = 20),
+        axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
+        axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1),
+        panel.background = element_blank())
+
+
+##
+
+png("results/localenvironmentaleffects.png", width = 1280, height = 720, units = "px", bg = "transparent")
+plot_grid(res4.AA.graph, res4.AEI.graph, res4.BGN.graph, res4.H.graph, nrow=2)
+dev.off()
+
+rm(list= ls()[(ls() %in% grep("res", ls(),value = T))])
+gc()
+#####
 
 
 
