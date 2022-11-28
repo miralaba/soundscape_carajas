@@ -602,93 +602,196 @@ time.period.diff.total %>%
 
 dev.off()
 #
+
+rm(list= ls()[(ls() %in% c("exclude","c","l","i","cnx","cnx.index"))])
+gc()
+
 #####
 
 
 ##### modelling the effect of environmental traits on soundscape index ####
 ## preparing data -- regional
-CN.data2 <- CN.data[!is.na(CN.data$precipitation),]
-CN.data2$alt <- scale(CN.data2$alt, center = F)
-CN.data2$distwater <- scale(CN.data2$distwater, center = F)
-CN.data2$distedge <- scale(CN.data2$distedge, center = F)
-CN.data2$distcanga <- scale(CN.data2$distcanga, center = F)
-CN.data2$distminning <- scale(CN.data2$distminning, center = F)
-CN.data2$treeheight <- scale(CN.data2$treeheight, center = F)
-CN.data2$NDVI <- scale(CN.data2$NDVI, center = F)
-CN.data2$precipitation <- scale(as.numeric(CN.data2$precipitation), center = F)
-CN.data2$temperature <- scale(as.numeric(CN.data2$temperature), center = F)
-CN.data2$humidity <- scale(as.numeric(CN.data2$humidity), center = F)
-CN.data2$wind <- scale(as.numeric(CN.data2$wind), center = F)
-CN.data2$month_year <- as.factor(paste0(CN.data2$Month, CN.data2$Year))
+CN.data.regional <- CN.data[!is.na(CN.data$precipitation),c(1:15,28:38)]
 
-#hist((CN.data2$BGNTotal*(-1))); range((CN.data2$BGNTotal*(-1)))
-#plot(fitdist((CN.data2$BGNTotal*(-1)), "pois"))  
+CN.data.regional$alt <- scale(CN.data.regional$alt, center = F)
+CN.data.regional$distwater <- scale(CN.data.regional$distwater, center = F)
+CN.data.regional$distedge <- scale(CN.data.regional$distedge, center = F)
+CN.data.regional$distcanga <- scale(CN.data.regional$distcanga, center = F)
+CN.data.regional$distminning <- scale(CN.data.regional$distminning, center = F)
+CN.data.regional$treeheight <- scale(CN.data.regional$treeheight, center = F)
+CN.data.regional$NDVI <- scale(CN.data.regional$NDVI, center = F)
+CN.data.regional$precipitation <- scale(as.numeric(CN.data.regional$precipitation), center = F)
+CN.data.regional$temperature <- scale(as.numeric(CN.data.regional$temperature), center = F)
+CN.data.regional$humidity <- scale(as.numeric(CN.data.regional$humidity), center = F)
+CN.data.regional$wind <- scale(as.numeric(CN.data.regional$wind), center = F)
 
-res1.BGN <- glmmTMB((BGNTotal*(-1)) ~ distwater
-                  + (1|Local:time_period), 
-                  family=poisson(link = "identity"), CN.data2)
+#hist(CN.data.regional$AATotal); range(CN.data.regional$AATotal)
+#plot(fitdist(CN.data.regional$AATotal, "beta"))
 
+res1.AA <- glmmTMB(AATotal ~ distwater + (1|Local:time_period), family=beta_family(), CN.data.regional)
+summary(res1.AA)   
+
+res2.AA <- glmmTMB(AATotal ~ distedge + (1|Local:time_period), family=beta_family(), CN.data.regional)
+summary(res2.AA)    
+
+res3.AA <- glmmTMB(AATotal ~ distcanga + (1|Local:time_period), family=beta_family(), CN.data.regional)
+summary(res3.AA)     
+
+res4.AA <- glmmTMB(AATotal ~ distminning + (1|Local:time_period), family=beta_family(), CN.data.regional)
+summary(res4.AA)      
+
+res5.AA <- glmmTMB(AATotal ~ treeheight + (1|Local:time_period), family=beta_family(), CN.data.regional)
+summary(res5.AA)       
+
+res6.AA <- glmmTMB(AATotal ~ NDVI + (1|Local:time_period), family=beta_family(), CN.data.regional)
+summary(res6.AA)        
+
+res7.AA <- glmmTMB(AATotal ~ precipitation + (1|Local:time_period), family=beta_family(), CN.data.regional)
+summary(res7.AA)         
+
+res8.AA <- glmmTMB(AATotal ~ temperature + (1|Local:time_period), family=beta_family(), CN.data.regional)
+summary(res8.AA)          
+
+res9.AA <- glmmTMB(AATotal ~ humidity + (1|Local:time_period), family=beta_family(), CN.data.regional)
+summary(res9.AA)           
+
+res10.AA <- glmmTMB(AATotal ~ wind + (1|Local:time_period), family=beta_family(), CN.data.regional)
+summary(res10.AA)            
+
+res11.AA <- glmmTMB(AATotal ~ distwater * humidity * precipitation + temperature + wind
+                    + (1|Local:time_period), 
+                    family=beta_family(), CN.data.regional)
+summary(res11.AA) 
+
+res11.AA.simres <- simulateResiduals(res11.AA)
+plot(res11.AA.simres)
+res11.AA.alleffects <- allEffects(res11.AA, residuals = T)
+plot(res11.AA.alleffects)
+
+res11.AA.t <- broom.mixed::tidy(res11.AA, conf.int = TRUE)
+res11.AA.t <- transform(res11.AA.t, term = sprintf("%s.%s", component, term))
+res11.AA.t$group <- "AA"
+
+res11.AA.graph <- dwplot(res11.AA.t[1:10,], by_2sd=F,
+                        dot_args = list(size = 5),
+                        whisker_args = list(size = 2))+
+                   geom_vline(xintercept=0, lty=2)+
+                   scale_y_discrete(labels = c("cond.(Intercept)"="Intercept", "cond.distwater"="Distance from water",
+                                               "cond.humidity" = "Air humidity", "cond.precipitation"="Precipitation",
+                                               "cond.temperature"="Temperature", "cond.wind"="Wind velocity",
+                                               "cond.distwater:humidity"="Distance from water * Air humidity",
+                                               "cond.distwater:precipitation"="Distance from water * Precipitation",
+                                               "cond.humidity:precipitation"="Air humidity * Precipitation",
+                                               "cond.distwater:humidity:precipitation"="Distance from water * Air humidity * Precipitation"))+
+                   xlab("Coefficient") + ylab("") +
+                   theme(axis.title = element_text(family = "serif", size = 22),
+                         axis.text.x = element_text(family = "serif", size = 20),
+                         axis.text.y = element_text(family = "serif", size = 20),
+                         axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
+                         axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1))
+
+
+##
+
+#hist(CN.data.regional$ADITotal); range(CN.data.regional$ADITotal)
+#plot(fitdist(CN.data.regional$ADITotal, "logis"))
+
+res1.ADI <- glmmTMB(sqrt(ADITotal) ~ distwater + (1|Local:time_period), family=Gamma(), CN.data.regional)
+summary(res1.ADI)   
+
+res2.ADI <- glmmTMB(sqrt(ADITotal) ~ distedge + (1|Local:time_period), family=Gamma(), CN.data.regional)
+summary(res2.ADI)    
+
+res3.ADI <- glmmTMB(sqrt(ADITotal) ~ distcanga + (1|Local:time_period), family=Gamma(), CN.data.regional)
+summary(res3.ADI)     
+
+res4.ADI <- glmmTMB(sqrt(ADITotal) ~ distminning + (1|Local:time_period), family=Gamma(), CN.data.regional)
+summary(res4.ADI)      
+
+res5.ADI <- glmmTMB(sqrt(ADITotal) ~ treeheight + (1|Local:time_period), family=Gamma(), CN.data.regional)
+summary(res5.ADI)       
+
+res6.ADI <- glmmTMB(ADITotal ~ NDVI + (1|Local:time_period), family=gaussian(link = "logit"), CN.data.regional)
+summary(res6.ADI)        
+
+res7.ADI <- glmmTMB(ADITotal ~ precipitation + (1|Local:time_period), family=gaussian(link = "logit"), CN.data.regional)
+summary(res7.ADI)         
+
+res8.ADI <- glmmTMB(ADITotal ~ temperature + (1|Local:time_period), family=gaussian(link = "logit"), CN.data.regional)
+summary(res8.ADI)          
+
+res9.ADI <- glmmTMB(ADITotal ~ humidity + (1|Local:time_period), family=gaussian(link = "logit"), CN.data.regional)
+summary(res9.ADI)           
+
+res10.ADI <- glmmTMB(ADITotal ~ wind + (1|Local:time_period), family=gaussian(link = "logit"), CN.data.regional)
+summary(res10.ADI)            
+
+res11.ADI <- glmmTMB(ADITotal ~ distwater * treeheight * NDVI
+                    + precipitation + temperature + humidity + wind
+                    + distcanga + distminning
+                    + (1|Local:time_period), 
+                    family=gaussian(link = "logit"), CN.data.regional)
+summary(res11.ADI) 
+
+res11.ADI.simres <- simulateResiduals(res11.ADI)
+plot(res11.ADI.simres)
+plot(allEffects(res11.ADI))
+
+res11.ADI.t <- broom.mixed::tidy(res11.ADI, conf.int = TRUE)
+res11.ADI.t <- transform(res11.ADI.t, term = sprintf("%s.%s", component, term))
+
+dwplot(res11.ADI.t, by_2sd=F,
+       dot_args = list(size = 5),
+       whisker_args = list(size = 2))+
+  geom_vline(xintercept=0, lty=2)+
+  xlab("Coefficient") + ylab("") +
+  theme(axis.title = element_text(family = "serif", size = 22),
+        axis.text.x = element_text(family = "serif", size = 20),
+        axis.text.y = element_text(family = "serif", size = 20),
+        axis.line.y = element_line(size = 1), axis.line.x = element_line(size = 1),
+        axis.ticks.y = element_line(size = 1), axis.ticks.x = element_line(size = 1))
+
+
+##
+
+#hist((CN.data.regional$BGNTotal*(-1))); range((CN.data.regional$BGNTotal*(-1)))
+#plot(fitdist((CN.data.regional$BGNTotal*(-1)), "pois"))  
+
+res1.BGN <- glmmTMB((BGNTotal*(-1)) ~ distwater + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
 summary(res1.BGN)   
 
-res2.BGN <- glmmTMB((BGNTotal*(-1)) ~ distedge
-                    + (1|Local:time_period), 
-                    family=poisson(link = "identity"), CN.data2)
-
+res2.BGN <- glmmTMB((BGNTotal*(-1)) ~ distedge + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
 summary(res2.BGN)    
 
-res3.BGN <- glmmTMB((BGNTotal*(-1)) ~ distcanga
-                    + (1|Local:time_period), 
-                    family=poisson(link = "identity"), CN.data2)
-
+res3.BGN <- glmmTMB((BGNTotal*(-1)) ~ distcanga + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
 summary(res3.BGN)     
 
-res4.BGN <- glmmTMB((BGNTotal*(-1)) ~ distminning
-                    + (1|Local:time_period), 
-                    family=poisson(link = "identity"), CN.data2)
-
+res4.BGN <- glmmTMB((BGNTotal*(-1)) ~ distminning + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
 summary(res4.BGN)      
 
-res5.BGN <- glmmTMB((BGNTotal*(-1)) ~ treeheight
-                    + (1|Local:time_period), 
-                    family=poisson(link = "identity"), CN.data2)
-
+res5.BGN <- glmmTMB((BGNTotal*(-1)) ~ treeheight + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
 summary(res5.BGN)       
 
-res6.BGN <- glmmTMB((BGNTotal*(-1)) ~ NDVI
-                    + (1|Local:time_period), 
-                    family=poisson(link = "identity"), CN.data2)
-
+res6.BGN <- glmmTMB((BGNTotal*(-1)) ~ NDVI + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
 summary(res6.BGN)        
 
-res7.BGN <- glmmTMB((BGNTotal*(-1)) ~ precipitation
-                    + (1|Local:time_period), 
-                    family=poisson(link = "identity"), CN.data2)
-
+res7.BGN <- glmmTMB((BGNTotal*(-1)) ~ precipitation + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
 summary(res7.BGN)         
 
-res8.BGN <- glmmTMB((BGNTotal*(-1)) ~ temperature
-                    + (1|Local:time_period), 
-                    family=poisson(link = "identity"), CN.data2)
-
+res8.BGN <- glmmTMB((BGNTotal*(-1)) ~ temperature + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
 summary(res8.BGN)          
 
-res9.BGN <- glmmTMB((BGNTotal*(-1)) ~ humidity
-                    + (1|Local:time_period), 
-                    family=poisson(link = "identity"), CN.data2)
-
+res9.BGN <- glmmTMB((BGNTotal*(-1)) ~ humidity + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
 summary(res9.BGN)           
 
-res10.BGN <- glmmTMB((BGNTotal*(-1)) ~ wind
-                    + (1|Local:time_period), 
-                    family=poisson(link = "identity"), CN.data2)
-
+res10.BGN <- glmmTMB((BGNTotal*(-1)) ~ wind + (1|Local:time_period), family=poisson(link = "identity"), CN.data.regional)
 summary(res10.BGN)            
 
 res11.BGN <- glmmTMB((BGNTotal*(-1)) ~ distwater * treeheight * NDVI
                      + precipitation + temperature + humidity + wind
                      + distcanga + distminning
                      + (1|Local:time_period), 
-                     family=poisson(link = "identity"), CN.data2)
+                     family=poisson(link = "identity"), CN.data.regional)
 
 summary(res11.BGN) 
 
@@ -878,7 +981,7 @@ write.csv(values.aov, "exploratory/ANOVA_Min.csv", row.names = F)
 
 #### between points / minutes & days random effects ####
 #plot(fitdist(CN.data$H, "beta"))
-res.H <- glmmTMB(H ~ Point + (1|Min) + (1|Day), CN.data, family=beta_family())
+res.H <- glmmTMB(H ~ Point + (1|Min) + (1|Day), CN.data, family=gaussian())
 summary(res.H)
 
 marginal.H <- emmeans(res.H, ~Point, type = "response")
@@ -1047,7 +1150,7 @@ plot_grid(g1NPeak, g2NPeak, ncol=1, labels = c("A", "B"), label_size=60, label_f
 n<-length(CN.data$AA)
 CN.data$AA <- (CN.data$AA *(n -1) +0.5)/n
 #plot(fitdist(CN.data$AA, "beta"))
-res.AA <- glmmTMB(AA ~ Point + (1|Min) + (1|Day), CN.data, family=beta_family())
+res.AA <- glmmTMB(AA ~ Point + (1|Min) + (1|Day), CN.data, family=gaussian())
 summary(res.AA)
 
 marginal.AA <- emmeans(res.AA, ~Point, type = "response")
