@@ -132,6 +132,108 @@ write.csv(sampling.overview, "results/sampling_by_point_by_year.csv", row.names 
 rm(list= ls()[(ls() %in% c("CN.location","ndvi2019","ndvi2022","treeheight","weather"))])
 gc()
 
+#### study area map ####
+library(raster)
+library(rgdal)
+library(rgeos)
+library(scales)
+library(sp)
+library(sf)
+library(cowplot)
+library(ggrepel)
+library(ggspatial)
+
+sa <- readOGR(dsn = "C:/Users/miral/Dropbox/GIS/Politico/America do Sul/Continente", layer = "tudo")
+sa <- crop(sa, extent(x=c(-83,-17), y=c(-56,15)))
+plot(sa, col="gray95")
+
+#amz <- readOGR(dsn = "C:/Users/miral/Dropbox/GIS/Politico/Amazonia bioma", layer = "Lim_Biogeografico")
+#plot(amz, add=T, col="gray85")
+
+br <- readOGR(dsn = "C:/Users/miral/Dropbox/GIS/Politico/Divisao Politica BR", layer = "BR_Contorno")
+plot(br, add=T, col="gray85")
+
+pa <- readOGR(dsn = "C:/Users/miral/Dropbox/GIS/Politico/Divisao Politica BR", layer = "BRASIL")
+pa <- pa[pa@data$UF=="PA",]
+plot(pa, add=T, col="gray75")
+
+#ogrListLayers("C:/Users/miral/Dropbox/GIS/Politico/flona_carajas.kml")
+carajas <- readOGR(dsn = "C:/Users/miral/Dropbox/GIS/Politico/flona_carajas.kml", layer = "sql_statement")
+#plot(carajas, add=T, col="gray55")
+#extent(carajas)
+
+#ogrListLayers("C:/Users/miral/Dropbox/GIS/Politico/parna_campos_ferruginosos.kml")
+ferrugem <- readOGR(dsn = "C:/Users/miral/Dropbox/GIS/Politico/parna_campos_ferruginosos.kml", layer = "PARNA_Campos_Ferruginosos")
+#plot(ferrugem, add=T, col="gray55")
+#extent(ferrugem)
+
+uc <- rbind(carajas, ferrugem)
+plot(uc, add=T, col="gray55")
+#extent(uc)
+
+lulc.carajas <- raster("C:/Users/miral/Dropbox/GIS/Politico/carajas.tif")
+lulc.carajas <- crop(lulc.carajas, extent(x=c(-51.2,-49.8), y=c(-6.8,-5.4)))
+
+lulc.carajas[lulc.carajas[]==3] <- 1
+lulc.carajas[lulc.carajas[]==4] <- 1
+lulc.carajas[lulc.carajas[]==11] <- 10
+lulc.carajas[lulc.carajas[]==12] <- 10
+lulc.carajas[lulc.carajas[]==15] <- 14
+lulc.carajas[lulc.carajas[]==39] <- 14
+lulc.carajas[lulc.carajas[]==41] <- 14
+
+lulc.carajas.df <- as.data.frame(lulc.carajas, xy = TRUE)
+head(lulc.carajas.df)
+
+breakpoints <- sort(unique(values(lulc.carajas)))
+mapbiomas.legend <- c("#129912", "#BBFCAC", "#FFFFB2", "#af2a2a", "#8a2be2", "#0000ff")
+labels.legend <- c("Forest Formation", "Non Forest Natural Formation", "Farming", "Urban Area", "Mining", "Water")
+
+location <- CN.data %>% dplyr::select(Local, long, lat) %>% distinct()
+
+g1 <- ggplot() +
+  geom_raster(data = lulc.carajas.df , aes(x = x, y = y, fill = factor(classification_2021)), alpha = 0.5) + 
+  scale_fill_manual(breaks = breakpoints, values = mapbiomas.legend, labels = labels.legend, name = "LULC Classes") + 
+  scale_y_continuous(position = "right", sec.axis = sec_axis(~., labels = NULL)) +
+  geom_sf(data = st_as_sf(uc), aes(color = Name), fill = NA, linewidth = 1.2) +
+  coord_sf(crs = crs(lulc.carajas), xlim = c(-51.8, -49.7), ylim=c(-6.9, -5.399773), expand = F, label_graticule = "ES") +
+  scale_color_manual(values = c("#006400", "#B8AF4F"), name = "UCs") +
+  geom_point(data = location, aes(x=long, y=lat), size=3.5) +
+  geom_text_repel(data = location, aes(x=long, y=lat, label=Local),
+                  size = 5,
+                  min.segment.length = .1,
+                  force = 3,
+                  max.overlaps = 99) +
+  annotation_scale(location = "br", width_hint = 0.25, text_family = "serif", text_cex = 1.5, line_width = 2, style = "ticks") +
+  annotation_north_arrow(location = "tr", which_north = "true", pad_x = unit(2.5, "cm"), height = unit(2.5, "cm"), width = unit(2.5, "cm"),
+                         style = north_arrow_fancy_orienteering(text_family = "serif", text_size = 16)) +
+  labs(x = "", y = "") +
+  theme_minimal(base_family = "serif") + 
+  theme(axis.text = element_text(size = 12),
+        legend.title = element_text(size = 18, face = "bold"),
+        legend.text = element_text(size = 18),
+        legend.position = c(0, .98),
+        legend.justification = c(0, 1),
+        panel.background = element_blank())
+
+
+g2 <- ggplot() +
+  geom_sf(data = st_as_sf(sa), fill = "gray95", linewidth = 1) +
+  geom_sf(data = st_as_sf(br), fill = "gray85", linewidth = .8) +
+  geom_sf(data = st_as_sf(pa), fill = "gray75", linewidth = .5) +
+  geom_sf(data = st_as_sf(uc), fill = "gray55", linewidth = .2) +
+  theme_void()
+
+
+png("results/study_area.png", width = 1440, height = 754, units = "px")
+
+ggdraw(g1) + draw_plot(g2, x = .14, y = .4, width = 0.16, height = 0.26)
+
+dev.off()
+
+
+
+
 #### correlogram ####
 png("results/correlograms.png", width = 2560, height = 2560, units = "px", bg = "transparent")
 par(mfrow = c(5, 5))
@@ -1545,451 +1647,5 @@ plot_grid(g1AEI, g2AEI, ncol=1, labels = c("A", "B"), label_size=60, label_fontf
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-fp.prop1C<-data.frame(ID=rep("SDE1", 6144), Time=rep(seq(1:24), each=256), Freq = rep(unique(fp.f$Freq), 24), z=NA)
-#fp.prop2C<-data.frame(ID=rep("SDE2", 6144), Time=rep(seq(1:24), each=256), Freq = rep(unique(fp.f$Freq), 24), z=NA)
-
-
-cont<-24
-j=1
-for (m in 1:24) {
-  for (z in unique(fp.f$Freq)) {
-    fp.prop1C$z[which(fp.prop1C$ID==grep("SDE1", fp.prop1C$ID, value = T) & 
-                        fp.prop1C$Time==m & fp.prop1C$Freq==z)] <- sum(fp.f$Peak[which(fp.f$ID==grep("SED1", fp.f$ID, value = T) & 
-                                                                                         fp.f$Min==j & 
-                                                                                         fp.f$Freq==z)], 
-                                                                       fp.f$Peak[which(fp.f$ID==grep("SED1", fp.f$ID, value = T) & 
-                                                                                         fp.f$Min==j+1 & 
-                                                                                         fp.f$Freq==z)],
-                                                                       fp.f$Peak[which(fp.f$ID==grep("SED1", fp.f$ID, value = T) & 
-                                                                                         fp.f$Min==j+2 & 
-                                                                                         fp.f$Freq==z)], 
-                                                                       fp.f$Peak[which(fp.f$ID==grep("SED1", fp.f$ID, value = T) & 
-                                                                                         fp.f$Min==j+3 & 
-                                                                                         fp.f$Freq==z)],
-                                                                       fp.f$Peak[which(fp.f$ID==grep("SED1", fp.f$ID, value = T) & 
-                                                                                         fp.f$Min==j+4 & 
-                                                                                         fp.f$Freq==z)], 
-                                                                       fp.f$Peak[which(fp.f$ID==grep("SED1", fp.f$ID, value = T) & 
-                                                                                         fp.f$Min==j+5 & 
-                                                                                         fp.f$Freq==z)], na.rm = T)/(length(fp.f$Peak[which(fp.f$ID==grep("SED1", fp.f$ID, value = T) & 
-                                                                                                                                              fp.f$Min==j & 
-                                                                                                                                              fp.f$Freq==z)]) + 
-                                                                                                                       length(fp.f$Peak[which(fp.f$ID==grep("SED1", fp.f$ID, value = T) & 
-                                                                                                                                                fp.f$Min==j+1 & 
-                                                                                                                                                fp.f$Freq==z)]) +
-                                                                                                                       length(fp.f$Peak[which(fp.f$ID==grep("SED1", fp.f$ID, value = T) & 
-                                                                                                                                                fp.f$Min==j+2 & 
-                                                                                                                                                fp.f$Freq==z)]) +
-                                                                                                                       length(fp.f$Peak[which(fp.f$ID==grep("SED1", fp.f$ID, value = T) & 
-                                                                                                                                                fp.f$Min==j+3 & 
-                                                                                                                                                fp.f$Freq==z)]) +
-                                                                                                                       length(fp.f$Peak[which(fp.f$ID==grep("SED1", fp.f$ID, value = T) & 
-                                                                                                                                                fp.f$Min==j+4 & 
-                                                                                                                                                fp.f$Freq==z)]) +
-                                                                                                                       length(fp.f$Peak[which(fp.f$ID==grep("SED1", fp.f$ID, value = T) & 
-                                                                                                                                                fp.f$Min==j+5 & 
-                                                                                                                                                fp.f$Freq==z)]))
-    
-  }
-  j=j+6
-  cont=cont-1
-  cat('\n>faltam', cont, 'horas <\n')
-  
-}
-
-fp.prop<-rbind(fp.prop1C, fp.prop2C)
-
-write.csv(fp.prop, "piloto_201908/prop_frequency_peak_byH.csv", row.names = F)
-
-
-library(tidyverse)
-library(ggplot2)
-library(rayshader)
-
-asu1 = ggplot(fp.prop[c(1:6144),], aes(Time, Freq, fill = z)) +
-  geom_raster(aes(group=Freq), interpolate = TRUE, show.legend = F) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,24,2)) +
-  scale_y_continuous(expand=c(0,0),breaks=seq(0,10,2.5),limits=c(0,11)) +
-  scale_fill_gradientn(colours=c("blue", "green", "yellow", "red")) +
-  labs(tag = "SDE1", x="Hour", y= "Frequency (kHz)") + 
-  theme(text = element_text(family = "serif", size = 42),
-        axis.title.y = element_text(angle=270),
-        plot.tag.position = c(0.9, 0.9), 
-        plot.tag = element_text(color = "white", face = "bold"))
-
-asu1
-
-
-
-plot_gg(asu1, multicore=TRUE, height = 11, width = 15, scale = 75, zoom=0.9, phi=30, theta=-30)
-#render_snapshot()
-#render_camera(zoom="resolu??o",phi=inclina??o,theta=angulo)
-
-
-plot_gg(asu1, multicore=TRUE, height = 13, width = 17, scale = 300, zoom=0.57, phi=40, theta=-43, windowsize=c(1900,1024))
-
-pdf("piloto_201908/asu1.pdf", height = 13, width = 17, bg = "transparent")  
-render_snapshot()
-dev.off()
-
-#
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-i=1
-for (i in 1:9) {
-  multiple_sounds(directory = l[i], resultfile = paste("piloto_201908/adi_", n[i], ".csv", sep=""), 
-                  soundindex = "acoustic_diversity", max_freq = 22500, db_threshold = -50, 
-                  no_cores = 4)
-  
-  multiple_sounds(directory = l[i], resultfile = paste("piloto_201908/aei_", n[i], ".csv", sep=""), 
-                  soundindex = "acoustic_evenness", max_freq = 22500, db_threshold = -50, 
-                  no_cores = 4)
-  
-  multiple_sounds(directory = l[i], resultfile = paste("piloto_201908/bio_", n[i], ".csv", sep=""), 
-                  soundindex = "bioacoustic_index", max_freq = 22500, fft_w = 512, 
-                  no_cores = 4)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-############################
-#                          #
-#  background noise (BGN)  #
-#       power (POW)        #
-#                          #
-############################
-
-
-
-cont <- length(l)
-#i=1
-for (i in 1:length(l)) {
-  
-  ss = spectro(normalize(downsample(readWave(l[i]), 44100), unit = "1"), wl = 512, plot = F)
-  mm =
-    melt(ss$amp, value.name = "Amplitude") %>%
-    dplyr::select(FrequencyIndex = Var1, TimeIndex = Var2, Amplitude)
-  ff =
-    melt(ss$freq, value.name = "Frequency") %>%
-    dplyr::mutate(FrequencyIndex = row_number(), Frequency = Frequency)
-  tt =
-    melt(ss$time, value.name = "Time") %>%
-    dplyr::mutate(TimeIndex = row_number())
-  sp =
-    mm %>%
-    dplyr::left_join(ff, by = "FrequencyIndex") %>%
-    dplyr::left_join(tt, by = "TimeIndex") %>%
-    dplyr::select(Time, Frequency, Amplitude)
-  
-  sp$Amplitude<-round(sp$Amplitude, 0)
-  
-  index1 <- data.frame(file=n[i], Frequency=unique(sp$Frequency), BGN=NA, POW=NA)
-  
-  for (z in unique(sp$Frequency)) {
-    
-    index1$BGN[which(index1$Frequency==z)] <- getmode(sp$Amplitude[which(sp$Frequency==z)])
-    index1$POW[which(index1$Frequency==z)] <- max(sp$Amplitude[which(sp$Frequency==z)]) - index1$BGN[which(index1$Frequency==z)]
-    
-  }  
-  
-  write.table(index1, "piloto_201908/SDE2C_BGN_POW_total.csv", append = T, row.names = F, col.names = F)
-  cont<-cont-1
-  cat('\n>finalizado', n[i], 'faltam', cont, '<\n')  
-}
-
-
-
-SDE2C_index <- read.csv("piloto_201908/SDE2C_BGN_POW_total.csv", sep = " ", header = F)
-colnames(SDE2C_index)<-c("File", "Frequency", "BGN", "POW")
-SDE2C_index$Dia <- rep(c(1:3), each=36864)
-SDE2C_index$Min <- rep(c(1:144), each=256)
-SDE2C_index<-SDE2C_index[,c(1,5,6,2,3,4)]
-write.csv(SDE2C_index, "piloto_201908/SDE2C_BGN_POW_total.csv", row.names = F)
-
-
-SDE2C_index_vf <- SDE2C_index[c(1:36864),-2]
-SDE2C_index_vf[,c(4,5)]<- NA
-SDE2C_index_vf$File<-grep("SED2C", unlist(strsplit(as.character(unique(SDE2C_index_vf$File)), "_")), value = T)
-
-
-for (ii in unique(SDE2C_index$Min)) {
-  min_da_vez <- SDE2C_index[which(SDE2C_index$Min==ii),]
-  
-  for (zz in unique(min_da_vez$Frequency)) {
-    SDE2C_index_vf$BGN[which(SDE2C_index_vf$Min==ii & SDE2C_index_vf$Frequency==zz)] <- round(mean(min_da_vez$BGN[which(min_da_vez$Frequency==zz)]),0)
-    SDE2C_index_vf$POW[which(SDE2C_index_vf$Min==ii & SDE2C_index_vf$Frequency==zz)] <- round(mean(min_da_vez$POW[which(min_da_vez$Frequency==zz)]),0)
-  }
-}
-
-write.csv(SDE1C_index_vf, "piloto_201908/SDE2C_BGN_POW_mean.csv", row.names = F)
-
-rm(list= ls()[(ls() %in% c("l", "n","i", "ii", "z", "zz", "cont", "ss", "mm", "ff", "tt", "sp", "min_da_vez"))])   
-
-
-
-
-
-
-index.f<-rbind(SDE1C_index_vf, SDE2C_index_vf)
-
-summary(index.f)
-hb<-hist(index.f$BGN, breaks = 20)
-hp<-hist(index.f$POW)
-
-for (y in 1:length(index.f$File)) {
-  if (index.f$BGN[y] > -29) { index.f$aa1[y]<-1 } else if (index.f$POW[y] > 10) { index.f$aa1[y]<-1 } else { index.f$aa1[y]<-0 }
-  if (index.f$BGN[y] > -28) { index.f$aa2[y]<-1 } else if (index.f$POW[y] > 10) { index.f$aa2[y]<-1 } else { index.f$aa2[y]<-0 }
-  if (index.f$BGN[y] > -26) { index.f$aa3[y]<-1 } else if (index.f$POW[y] > 10) { index.f$aa3[y]<-1 } else { index.f$aa3[y]<-0 }
-  if (index.f$BGN[y] > -24) { index.f$aa4[y]<-1 } else if (index.f$POW[y] > 10) { index.f$aa4[y]<-1 } else { index.f$aa4[y]<-0 }
-  if (index.f$BGN[y] > -20) { index.f$aa5[y]<-1 } else if (index.f$POW[y] > 10) { index.f$aa5[y]<-1 } else { index.f$aa5[y]<-0 }
-  if (index.f$BGN[y] > -29) { index.f$aa6[y]<-1 } else if (index.f$POW[y] > 12) { index.f$aa6[y]<-1 } else { index.f$aa6[y]<-0 }
-  if (index.f$BGN[y] > -28) { index.f$aa7[y]<-1 } else if (index.f$POW[y] > 12) { index.f$aa7[y]<-1 } else { index.f$aa7[y]<-0 }
-  if (index.f$BGN[y] > -26) { index.f$aa8[y]<-1 } else if (index.f$POW[y] > 12) { index.f$aa8[y]<-1 } else { index.f$aa8[y]<-0 }
-  if (index.f$BGN[y] > -24) { index.f$aa9[y]<-1 } else if (index.f$POW[y] > 12) { index.f$aa9[y]<-1 } else { index.f$aa9[y]<-0 }
-  if (index.f$BGN[y] > -20) { index.f$aa10[y]<-1 } else if (index.f$POW[y] > 12) { index.f$aa10[y]<-1 } else { index.f$aa10[y]<-0 }
-  if (index.f$BGN[y] > -29) { index.f$aa11[y]<-1 } else if (index.f$POW[y] > 14) { index.f$aa11[y]<-1 } else { index.f$aa11[y]<-0 }
-  if (index.f$BGN[y] > -28) { index.f$aa12[y]<-1 } else if (index.f$POW[y] > 14) { index.f$aa12[y]<-1 } else { index.f$aa12[y]<-0 }
-  if (index.f$BGN[y] > -26) { index.f$aa13[y]<-1 } else if (index.f$POW[y] > 14) { index.f$aa13[y]<-1 } else { index.f$aa13[y]<-0 }
-  if (index.f$BGN[y] > -24) { index.f$aa14[y]<-1 } else if (index.f$POW[y] > 14) { index.f$aa14[y]<-1 } else { index.f$aa14[y]<-0 }
-  if (index.f$BGN[y] > -20) { index.f$aa15[y]<-1 } else if (index.f$POW[y] > 14) { index.f$aa15[y]<-1 } else { index.f$aa15[y]<-0 }
-  if (index.f$BGN[y] > -29) { index.f$aa16[y]<-1 } else if (index.f$POW[y] > 16) { index.f$aa16[y]<-1 } else { index.f$aa16[y]<-0 }
-  if (index.f$BGN[y] > -28) { index.f$aa17[y]<-1 } else if (index.f$POW[y] > 16) { index.f$aa17[y]<-1 } else { index.f$aa17[y]<-0 }
-  if (index.f$BGN[y] > -26) { index.f$aa18[y]<-1 } else if (index.f$POW[y] > 16) { index.f$aa18[y]<-1 } else { index.f$aa18[y]<-0 }
-  if (index.f$BGN[y] > -24) { index.f$aa19[y]<-1 } else if (index.f$POW[y] > 16) { index.f$aa19[y]<-1 } else { index.f$aa19[y]<-0 }
-  if (index.f$BGN[y] > -20) { index.f$aa20[y]<-1 } else if (index.f$POW[y] > 16) { index.f$aa20[y]<-1 } else { index.f$aa20[y]<-0 }
-  if (index.f$BGN[y] > -29) { index.f$aa21[y]<-1 } else if (index.f$POW[y] > 18) { index.f$aa21[y]<-1 } else { index.f$aa21[y]<-0 }
-  if (index.f$BGN[y] > -28) { index.f$aa22[y]<-1 } else if (index.f$POW[y] > 18) { index.f$aa22[y]<-1 } else { index.f$aa22[y]<-0 }
-  if (index.f$BGN[y] > -26) { index.f$aa23[y]<-1 } else if (index.f$POW[y] > 18) { index.f$aa23[y]<-1 } else { index.f$aa23[y]<-0 }
-  if (index.f$BGN[y] > -24) { index.f$aa24[y]<-1 } else if (index.f$POW[y] > 18) { index.f$aa24[y]<-1 } else { index.f$aa24[y]<-0 }
-  if (index.f$BGN[y] > -20) { index.f$aa25[y]<-1 } else if (index.f$POW[y] > 18) { index.f$aa25[y]<-1 } else { index.f$aa25[y]<-0 }
-  if (index.f$BGN[y] > -29) { index.f$aa26[y]<-1 } else if (index.f$POW[y] > 20) { index.f$aa26[y]<-1 } else { index.f$aa26[y]<-0 }
-  if (index.f$BGN[y] > -28) { index.f$aa27[y]<-1 } else if (index.f$POW[y] > 20) { index.f$aa27[y]<-1 } else { index.f$aa27[y]<-0 }
-  if (index.f$BGN[y] > -26) { index.f$aa28[y]<-1 } else if (index.f$POW[y] > 20) { index.f$aa28[y]<-1 } else { index.f$aa28[y]<-0 }
-  if (index.f$BGN[y] > -24) { index.f$aa29[y]<-1 } else if (index.f$POW[y] > 20) { index.f$aa29[y]<-1 } else { index.f$aa29[y]<-0 }
-  if (index.f$BGN[y] > -20) { index.f$aa30[y]<-1 } else if (index.f$POW[y] > 20) { index.f$aa30[y]<-1 } else { index.f$aa30[y]<-0 }
-  if (index.f$BGN[y] > -29) { index.f$aa31[y]<-1 } else if (index.f$POW[y] > 22) { index.f$aa31[y]<-1 } else { index.f$aa31[y]<-0 }
-  if (index.f$BGN[y] > -28) { index.f$aa32[y]<-1 } else if (index.f$POW[y] > 22) { index.f$aa32[y]<-1 } else { index.f$aa32[y]<-0 }
-  if (index.f$BGN[y] > -26) { index.f$aa33[y]<-1 } else if (index.f$POW[y] > 22) { index.f$aa33[y]<-1 } else { index.f$aa33[y]<-0 }
-  if (index.f$BGN[y] > -24) { index.f$aa34[y]<-1 } else if (index.f$POW[y] > 22) { index.f$aa34[y]<-1 } else { index.f$aa34[y]<-0 }
-  if (index.f$BGN[y] > -20) { index.f$aa35[y]<-1 } else if (index.f$POW[y] > 22) { index.f$aa35[y]<-1 } else { index.f$aa35[y]<-0 }
-  if (index.f$BGN[y] > -29) { index.f$aa36[y]<-1 } else if (index.f$POW[y] > 24) { index.f$aa36[y]<-1 } else { index.f$aa36[y]<-0 }
-  if (index.f$BGN[y] > -28) { index.f$aa37[y]<-1 } else if (index.f$POW[y] > 24) { index.f$aa37[y]<-1 } else { index.f$aa37[y]<-0 }
-  if (index.f$BGN[y] > -26) { index.f$aa38[y]<-1 } else if (index.f$POW[y] > 24) { index.f$aa38[y]<-1 } else { index.f$aa38[y]<-0 }
-  if (index.f$BGN[y] > -24) { index.f$aa39[y]<-1 } else if (index.f$POW[y] > 24) { index.f$aa39[y]<-1 } else { index.f$aa39[y]<-0 }
-  if (index.f$BGN[y] > -20) { index.f$aa40[y]<-1 } else if (index.f$POW[y] > 24) { index.f$aa40[y]<-1 } else { index.f$aa40[y]<-0 }
-  if (index.f$BGN[y] > -29) { index.f$aa41[y]<-1 } else if (index.f$POW[y] > 26) { index.f$aa41[y]<-1 } else { index.f$aa41[y]<-0 }
-  if (index.f$BGN[y] > -28) { index.f$aa42[y]<-1 } else if (index.f$POW[y] > 26) { index.f$aa42[y]<-1 } else { index.f$aa42[y]<-0 }
-  if (index.f$BGN[y] > -26) { index.f$aa43[y]<-1 } else if (index.f$POW[y] > 26) { index.f$aa43[y]<-1 } else { index.f$aa43[y]<-0 }
-  if (index.f$BGN[y] > -24) { index.f$aa44[y]<-1 } else if (index.f$POW[y] > 26) { index.f$aa44[y]<-1 } else { index.f$aa44[y]<-0 }
-  if (index.f$BGN[y] > -20) { index.f$aa45[y]<-1 } else if (index.f$POW[y] > 26) { index.f$aa45[y]<-1 } else { index.f$aa45[y]<-0 }
-  if (index.f$BGN[y] > -29) { index.f$aa46[y]<-1 } else if (index.f$POW[y] > 28) { index.f$aa46[y]<-1 } else { index.f$aa46[y]<-0 }
-  if (index.f$BGN[y] > -28) { index.f$aa47[y]<-1 } else if (index.f$POW[y] > 28) { index.f$aa47[y]<-1 } else { index.f$aa47[y]<-0 }
-  if (index.f$BGN[y] > -26) { index.f$aa48[y]<-1 } else if (index.f$POW[y] > 28) { index.f$aa48[y]<-1 } else { index.f$aa48[y]<-0 }
-  if (index.f$BGN[y] > -24) { index.f$aa49[y]<-1 } else if (index.f$POW[y] > 28) { index.f$aa49[y]<-1 } else { index.f$aa49[y]<-0 }
-  if (index.f$BGN[y] > -20) { index.f$aa50[y]<-1 } else if (index.f$POW[y] > 28) { index.f$aa50[y]<-1 } else { index.f$aa50[y]<-0 }  
-  if (index.f$BGN[y] > -29) { index.f$aa51[y]<-1 } else if (index.f$POW[y] > 30) { index.f$aa51[y]<-1 } else { index.f$aa51[y]<-0 }
-  if (index.f$BGN[y] > -28) { index.f$aa52[y]<-1 } else if (index.f$POW[y] > 30) { index.f$aa52[y]<-1 } else { index.f$aa52[y]<-0 }
-  if (index.f$BGN[y] > -26) { index.f$aa53[y]<-1 } else if (index.f$POW[y] > 30) { index.f$aa53[y]<-1 } else { index.f$aa53[y]<-0 }
-  if (index.f$BGN[y] > -24) { index.f$aa54[y]<-1 } else if (index.f$POW[y] > 30) { index.f$aa54[y]<-1 } else { index.f$aa54[y]<-0 }
-  if (index.f$BGN[y] > -20) { index.f$aa55[y]<-1 } else if (index.f$POW[y] > 30) { index.f$aa55[y]<-1 } else { index.f$aa55[y]<-0 }
-}
-
-write.csv(index.f, "piloto_201908/acoustically_active_min.csv", row.names = F)
-
-#aa1 == BGN > -29 (90%) ; POW > 10 *159
-#aa2 == BGN > -28 (92%) ; POW > 10 *175
-#aa3 == BGN > -26 (95%) ; POW > 10 *233
-#aa4 == BGN > -24 (97%) ; POW > 10 *282
-#aa5 == BGN > -20 (99%) ; POW > 10 *394
-
-#aa6 == BGN > -29 (90%) ; POW > 12 *1382
-#aa7 == BGN > -28 (92%) ; POW > 12 *1550
-#aa8 == BGN > -26 (95%) ; POW > 12 *1868
-#aa9 == BGN > -24 (97%) ; POW > 12 *2189
-#aa10 == BGN > -20 (99%) ; POW > 12 *2800
-
-#aa11 == BGN > -29 (90%) ; POW > 14 *5409
-#aa12 == BGN > -28 (92%) ; POW > 14 *5862
-#aa13 == BGN > -26 (95%) ; POW > 14 *6676
-#aa14 == BGN > -24 (97%) ; POW > 14 *7397
-#aa15 == BGN > -20 (99%) ; POW > 14 *8580
-
-#aa16 == BGN > -29 (90%) ; POW > 16 *12904
-#aa17 == BGN > -28 (92%) ; POW > 16 *13759
-#aa18 == BGN > -26 (95%) ; POW > 16 *15139
-#aa19 == BGN > -24 (97%) ; POW > 16 *16170
-#aa20 == BGN > -20 (99%) ; POW > 16 *17651
-
-#aa21 == BGN > -29 (90%) ; POW > 18 *22676
-#aa22 == BGN > -28 (92%) ; POW > 18 *23908
-#aa23 == BGN > -26 (95%) ; POW > 18 *25670
-#aa24 == BGN > -24 (97%) ; POW > 18 *26903
-#aa25 == BGN > -20 (99%) ; POW > 18 *28510
-
-#aa26 == BGN > -29 (90%) ; POW > 20 *33135
-#aa27 == BGN > -28 (92%) ; POW > 20 *34605
-#aa28 == BGN > -26 (95%) ; POW > 20 *36602
-#aa29 == BGN > -24 (97%) ; POW > 20 *37944
-#aa30 == BGN > -20 (99%) ; POW > 20 *39613
-
-#aa31 == BGN > -29 (90%) ; POW > 22 *43142
-#aa32 == BGN > -28 (92%) ; POW > 22 *44706
-#aa33 == BGN > -26 (95%) ; POW > 22 *46819
-#aa34 == BGN > -24 (97%) ; POW > 22 *48210
-#aa35 == BGN > -20 (99%) ; POW > 22 *49887
-
-#aa36 == BGN > -29 (90%) ; POW > 24 *51275
-#aa37 == BGN > -28 (92%) ; POW > 24 *52885
-#aa38 == BGN > -26 (95%) ; POW > 24 *55033
-#aa39 == BGN > -24 (97%) ; POW > 24 *56434
-#aa40 == BGN > -20 (99%) ; POW > 24 *58111
-
-#aa41 == BGN > -29 (90%) ; POW > 26 *57276
-#aa42 == BGN > -28 (92%) ; POW > 26 *58899
-#aa43 == BGN > -26 (95%) ; POW > 26 *61055
-#aa44 == BGN > -24 (97%) ; POW > 26 *62456
-#aa45 == BGN > -20 (99%) ; POW > 26 *64133
-
-#aa46 == BGN > -29 (90%) ; POW > 28 *61043
-#aa47 == BGN > -28 (92%) ; POW > 28 *62672
-#aa48 == BGN > -26 (95%) ; POW > 28 *64828
-#aa49 == BGN > -24 (97%) ; POW > 28 *66229
-#aa50 == BGN > -20 (99%) ; POW > 28 *67906
-
-#aa51 == BGN > -29 (90%) ; POW > 30 *63313
-#aa52 == BGN > -28 (92%) ; POW > 30 *64942
-#aa53 == BGN > -26 (95%) ; POW > 30 *67098
-#aa54 == BGN > -24 (97%) ; POW > 30 *68499
-#aa55 == BGN > -20 (99%) ; POW > 30 *70176
-
-
-rm(list= ls()[(ls() %in% c("y", "hb", "hp"))])  
-
-Sm <- data.frame(File=rep(c("SDE1","SDE2"), each=144), Min=rep(seq(1:144),2))
-Sm.cols.text <- "Sm"; Sm.cols.number <- seq(1:55); Sm.cols <- paste(Sm.cols.text, Sm.cols.number, sep = "")
-Sm[Sm.cols]<-NA
-
-
-for (a in 3:57) {
-  for (m in 1:144) {
-    Sm[which(Sm$File==grep("SDE1", Sm$File, value = T) & Sm$Min==m),a] <- round((sum(index.f[which(index.f$File==grep("SED1", index.f$File, value = T) & index.f$Min==m), a+3])/256), 2)
-    Sm[which(Sm$File==grep("SDE2", Sm$File, value = T) & Sm$Min==m),a] <- round((sum(index.f[which(index.f$File==grep("SED2", index.f$File, value = T) & index.f$Min==m), a+3])/256), 2)
-  }  
-}
-
-write.csv(index.f, "piloto_201908/soundscape_saturation_unchose.csv", row.names = F)
-
-rm(list= ls()[(ls() %in% c("a", "m", "Sm.cols.text", "Sm.cols.number", "Sm.cols"))])   
 
 
