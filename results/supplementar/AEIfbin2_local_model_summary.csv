@@ -1,0 +1,28 @@
+ Family: gaussian  ( identity )
+Formula:          
+AEIfbin2.adj ~ n_palmtrees + n_trees + n_vines + (1 | Local:time_period) +  
+    (ar1(times - 1 | Year))
+Data: CN.data.local.modelfit
+
+     AIC      BIC   logLik deviance df.resid 
+ -2348.9  -2308.5   1182.4  -2364.9     1144 
+
+Random effects:
+
+Conditional model:
+ Groups            Name                     Variance  Std.Dev. Corr      
+ Local:time_period (Intercept)              0.0008878 0.02980            
+ Year              times(0.220509893455073) 0.0029943 0.05472  0.57 (ar1)
+ Residual                                   0.0050901 0.07134            
+Number of obs: 1152, groups:  Local:time_period, 24; Year, 2
+
+Dispersion estimate for gaussian family (sigma^2): 0.00509 
+
+Conditional model:
+              Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  2.0644250  0.0553347   37.31  < 2e-16 ***
+n_palmtrees -0.0125224  0.0039519   -3.17  0.00153 ** 
+n_trees     -0.0002983  0.0001633   -1.83  0.06774 .  
+n_vines     -0.0008915  0.0004634   -1.92  0.05436 .  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1

@@ -1,0 +1,51 @@
+"Model","K","logLik","AICc","delta","weight"
+"n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,2532.63,-5051.17,0,0.675
+"n_palmtrees + n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",8,2532.87,-5049.62,1.55,0.311
+"n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,2527.34,-5042.62,8.554,0.009
+"n_palmtrees + n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,2527.45,-5040.8,10.373,0.004
+"n_palmtrees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,2522.69,-5033.31,17.855,0
+"n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,2373.23,-4732.35,0,0.702
+"n_palmtrees + n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",8,2373.24,-4730.35,1.999,0.258
+"n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,2368.66,-4725.25,7.099,0.02
+"n_palmtrees + n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,2369.21,-4724.31,8.041,0.013
+"n_palmtrees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,2367.01,-4721.95,10.405,0.004
+"n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,-1497.31,3008.71,0,0.424
+"n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,-1498.92,3009.92,1.209,0.232
+"n_palmtrees + n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",8,-1497.27,3010.66,1.95,0.16
+"n_palmtrees + n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,-1498.57,3011.24,2.527,0.12
+"n_palmtrees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,-1500.57,3013.21,4.498,0.045
+"n_palmtrees + n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",8,1182.43,-2348.73,0,0.337
+"n_palmtrees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,1180.23,-2348.38,0.349,0.283
+"n_palmtrees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,1180.87,-2347.65,1.083,0.196
+"n_palmtrees + n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,1180.72,-2347.34,1.391,0.168
+"n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,1178.22,-2342.34,6.388,0.014
+"n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,-2564.87,5141.81,0,0.318
+"n_palmtrees + n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,-2564.37,5142.83,1.018,0.191
+"n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,-2564.44,5142.97,1.16,0.178
+"n_palmtrees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,-2565.57,5143.22,1.409,0.157
+"n_palmtrees + n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",8,-2564.16,5144.45,2.635,0.085
+"n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,-3087.85,6189.79,0,0.636
+"n_palmtrees + n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",8,-3087.68,6191.49,1.695,0.273
+"n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,-3091.87,6195.81,6.016,0.031
+"n_palmtrees + n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,-3090.97,6196.05,6.255,0.028
+"n_palmtrees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,-3092.48,6197.03,7.236,0.017
+"n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,-2560.25,5132.56,0,0.317
+"n_palmtrees + n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,-2559.74,5133.58,1.015,0.191
+"n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,-2559.8,5133.71,1.143,0.179
+"n_palmtrees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,-2560.94,5133.95,1.384,0.159
+"n_palmtrees + n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",8,-2559.53,5135.18,2.62,0.085
+"n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,-3000.57,6015.24,0,0.666
+"n_palmtrees + n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",8,-3000.43,6016.98,1.741,0.279
+"n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,-3005.12,6022.31,7.069,0.019
+"n_palmtrees + n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,-3004.22,6022.53,7.297,0.017
+"n_palmtrees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,-3005.86,6023.8,8.557,0.009
+"n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,2624.03,-5233.96,0,0.511
+"n_palmtrees + n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",8,2625,-5233.87,0.089,0.489
+"n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,2613.6,-5215.12,18.839,0
+"n_palmtrees + n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,2613.68,-5213.27,20.684,0
+"n_palmtrees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,2611.06,-5208.03,25.928,0
+"n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,2404.01,-4793.92,0,0.71
+"n_palmtrees + n_trees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",8,2404.04,-4791.96,1.959,0.266
+"n_trees + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,2399.54,-4787.01,6.912,0.022
+"n_palmtrees + n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",7,2397.78,-4781.46,12.464,0.001
+"n_vines + (1 | Local:time_period) + (ar1(times - 1 | Year))",6,2393.09,-4774.1,19.82,0

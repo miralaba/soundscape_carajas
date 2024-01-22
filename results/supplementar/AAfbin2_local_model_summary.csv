@@ -1,0 +1,25 @@
+ Family: beta  ( logit )
+Formula:          
+AAfbin2b ~ n_trees + n_vines + (1 | Local:time_period) + (ar1(times -      1 | Year))
+Data: CN.data.local.modelfit
+
+     AIC      BIC   logLik deviance df.resid 
+ -4794.0  -4758.7   2404.0  -4808.0     1145 
+
+Random effects:
+
+Conditional model:
+ Groups            Name                     Variance Std.Dev. Corr      
+ Local:time_period (Intercept)              0.7923   0.8901             
+ Year              times(0.220509893455073) 1.4755   1.2147   0.65 (ar1)
+Number of obs: 1152, groups:  Local:time_period, 24; Year, 2
+
+Dispersion parameter for beta family (): 20.2 
+
+Conditional model:
+              Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -10.681984   1.268173  -8.423  < 2e-16 ***
+n_trees       0.017651   0.002974   5.935 2.93e-09 ***
+n_vines       0.040627   0.012352   3.289    0.001 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1

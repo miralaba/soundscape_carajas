@@ -1,0 +1,24 @@
+ Family: genpois  ( log )
+Formula:          BGNTotal.adj ~ n_trees + (1 | Local:time_period) + (ar1(times -  
+    1 | Year))
+Data: CN.data.local.modelfit
+
+     AIC      BIC   logLik deviance df.resid 
+  5141.7   5172.0  -2564.9   5129.7     1146 
+
+Random effects:
+
+Conditional model:
+ Groups            Name                     Variance Std.Dev. Corr      
+ Local:time_period (Intercept)              0.001776 0.04214            
+ Year              times(0.220509893455073) 0.008308 0.09115  0.51 (ar1)
+Number of obs: 1152, groups:  Local:time_period, 24; Year, 2
+
+Dispersion parameter for genpois family (): 0.234 
+
+Conditional model:
+             Estimate Std. Error z value Pr(>|z|)    
+(Intercept) 2.5623161  0.0480317   53.35  < 2e-16 ***
+n_trees     0.0004893  0.0001446    3.38 0.000717 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1

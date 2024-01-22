@@ -1,0 +1,27 @@
+ Family: genpois  ( log )
+Formula:          BGNTotal.adj ~ z_alt + z_distedge + z_distwater + z_NDVI + (1 |  
+    Local:time_period) + (ar1(times - 1 | Year))
+Data: CN.data.regional.modelfit
+
+     AIC      BIC   logLik deviance df.resid 
+ 11722.6  11775.6  -5852.3  11704.6     2679 
+
+Random effects:
+
+Conditional model:
+ Groups            Name                     Variance Std.Dev. Corr      
+ Local:time_period (Intercept)              0.001811 0.04256            
+ Year              times(0.220509893455073) 0.003950 0.06285  0.88 (ar1)
+Number of obs: 2688, groups:  Local:time_period, 56; Year, 2
+
+Dispersion parameter for genpois family (): 0.269 
+
+Conditional model:
+             Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  2.724804   0.009451  288.29  < 2e-16 ***
+z_alt       -0.021104   0.007231   -2.92  0.00351 ** 
+z_distedge   0.019790   0.007554    2.62  0.00880 ** 
+z_distwater -0.019389   0.006693   -2.90  0.00377 ** 
+z_NDVI      -0.040286   0.005938   -6.78 1.17e-11 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1

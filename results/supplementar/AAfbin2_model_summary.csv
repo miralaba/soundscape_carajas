@@ -1,0 +1,29 @@
+ Family: beta  ( logit )
+Formula:          
+AAfbin2b ~ z_alt + z_distedge + z_NDVI + z_precipitation + z_temperature +  
+    (1 | Local:time_period) + (ar1(times - 1 | Year))
+Data: CN.data.regional.modelfit
+
+     AIC      BIC   logLik deviance df.resid 
+-10297.0 -10238.1   5158.5 -10317.0     2678 
+
+Random effects:
+
+Conditional model:
+ Groups            Name                     Variance Std.Dev. Corr      
+ Local:time_period (Intercept)              0.37778  0.6146             
+ Year              times(0.220509893455073) 0.08303  0.2881   0.93 (ar1)
+Number of obs: 2688, groups:  Local:time_period, 56; Year, 2
+
+Dispersion parameter for beta family (): 3.82 
+
+Conditional model:
+                Estimate Std. Error z value Pr(>|z|)    
+(Intercept)     -2.12417    0.09919 -21.414  < 2e-16 ***
+z_alt           -0.31092    0.08998  -3.455  0.00055 ***
+z_distedge       0.23498    0.09281   2.532  0.01135 *  
+z_NDVI          -0.13516    0.05393  -2.506  0.01221 *  
+z_precipitation  0.03905    0.02593   1.506  0.13211    
+z_temperature    0.37192    0.03916   9.496  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
