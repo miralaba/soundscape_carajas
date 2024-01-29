@@ -9,9 +9,14 @@ Repository Structure
 The repository is organized into three main folders:
 
     data/: Contains raw acoustic data files collected from 14 sites within two protected areas in the Amazon biome.
+    
+    
     scripts/: Includes two R scripts:
         _soundscape.R: For data preprocessing and extraction of soundscape indices.
+        
         _analyses.R: Contains the statistical analysis workflow, as detailed in the methods section of the study.
+        
+        
     results/: Stores the main figures generated from our analyses, visualizing key findings.
 
 ## Prerequisites
