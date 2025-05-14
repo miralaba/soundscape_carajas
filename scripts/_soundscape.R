@@ -1,8 +1,3 @@
-
-#### setting working directory ####
-setwd("~/capital_natural/soundscape")
-memory.limit(1000000)
-
 ##### loading required packages ####
 library(tuneR)
 library(seewave)
@@ -88,26 +83,26 @@ for (t in 1:length(minute.index)) {
 CN.data.raw$path2file <- list.sound.files
 
 # adding variables -- soundscape index total frequency: 0.3 - 22.05kHz
-CN.data.raw$HTotal=NA; CN.data.raw$BGNTotal=NA; CN.data.raw$S2NTotal=NA; CN.data.raw$NPeakTotal=NA; CN.data.raw$AATotal=NA; CN.data.raw$ADITotal=NA; CN.data.raw$AEITotal=NA
+CN.data.raw$HTotal=NA; CN.data.raw$BGNTotal=NA; CN.data.raw$AATotal=NA; CN.data.raw$ADITotal=NA; CN.data.raw$AEITotal=NA; CN.data.raw$ACITotal=NA; CN.data.raw$BAITotal=NA 
 
 # adding variables -- soundscape index frequency bin 1: 0.3 - 4 
-CN.data.raw$Hfbin1=NA; CN.data.raw$BGNfbin1=NA; CN.data.raw$S2Nfbin1=NA; CN.data.raw$NPeakfbin1=NA; CN.data.raw$AAfbin1=NA; CN.data.raw$ADIfbin1=NA; CN.data.raw$AEIfbin1=NA
+CN.data.raw$Hfbin1=NA; CN.data.raw$BGNfbin1=NA; CN.data.raw$AAfbin1=NA; CN.data.raw$ADIfbin1=NA; CN.data.raw$AEIfbin1=NA; CN.data.raw$ACIfbin1=NA; CN.data.raw$BAIfbin1=NA
 
 # adding variables -- soundscape index frequency bin 2: 4 - 12 
-CN.data.raw$Hfbin2=NA; CN.data.raw$BGNfbin2=NA; CN.data.raw$S2Nfbin2=NA; CN.data.raw$NPeakfbin2=NA; CN.data.raw$AAfbin2=NA; CN.data.raw$ADIfbin2=NA; CN.data.raw$AEIfbin2=NA
+CN.data.raw$Hfbin2=NA; CN.data.raw$BGNfbin2=NA; CN.data.raw$AAfbin2=NA; CN.data.raw$ADIfbin2=NA; CN.data.raw$AEIfbin2=NA; CN.data.raw$ACIfbin2=NA; CN.data.raw$BAIfbin2=NA
 
 # adding variables -- soundscape index frequency bin 3: 0.3 - 12 
-CN.data.raw$Hfbin3=NA; CN.data.raw$BGNfbin3=NA; CN.data.raw$S2Nfbin3=NA; CN.data.raw$NPeakfbin3=NA; CN.data.raw$AAfbin3=NA; CN.data.raw$ADIfbin3=NA; CN.data.raw$AEIfbin3=NA
+CN.data.raw$Hfbin3=NA; CN.data.raw$BGNfbin3=NA; CN.data.raw$AAfbin3=NA; CN.data.raw$ADIfbin3=NA; CN.data.raw$AEIfbin3=NA; CN.data.raw$ACIfbin3=NA; CN.data.raw$BAIfbin3=NA
 
 # adding variables -- soundscape index frequency bin 4: 12 - 22.05 
-CN.data.raw$Hfbin4=NA; CN.data.raw$BGNfbin4=NA; CN.data.raw$S2Nfbin4=NA; CN.data.raw$NPeakfbin4=NA; CN.data.raw$AAfbin4=NA; CN.data.raw$ADIfbin4=NA; CN.data.raw$AEIfbin4=NA
+CN.data.raw$Hfbin4=NA; CN.data.raw$BGNfbin4=NA; CN.data.raw$AAfbin4=NA; CN.data.raw$ADIfbin4=NA; CN.data.raw$AEIfbin4=NA; CN.data.raw$ACIfbin4=NA; CN.data.raw$BAIfbin4=NA
 
 # reordering columns
 CN.data.raw <- CN.data.raw[,c(1,3:8,10:44,2,9)]
 
 # saving
 dir.create("data")
-write.csv(CN.data.raw, "data/AcousticIndex_112022_v1.csv", na = "NA", row.names = F)
+write.csv(CN.data.raw, "data/AcousticIndex_042025_v1.csv", na = "NA", row.names = F)
 
 rm(list= ls()[!(ls() %in% c("CN.data.raw"))])
 gc()
@@ -136,28 +131,6 @@ for (i in 1:nrow(CN.data.raw)) {
   Sbin3 <- ffilter(S, from = 300, to = 12000, output="Wave")
   Sbin4 <- ffilter(S, from = 12000, to = 22050, output="Wave")
   
-  # total entropy of a time wave
-  CN.data.raw$HTotal[i] <- H(Stotal, wl = 512)
-  CN.data.raw$Hfbin1[i] <- H(Sbin1, wl = 512)
-  CN.data.raw$Hfbin2[i] <- H(Sbin2, wl = 512)
-  CN.data.raw$Hfbin3[i] <- H(Sbin3, wl = 512)
-  CN.data.raw$Hfbin4[i] <- H(Sbin4, wl = 512)
-  
-  # acoustic diversity index
-  CN.data.raw$ADITotal[i] <- acoustic_diversity(Stotal)$adi_left
-  CN.data.raw$ADIfbin1[i] <- acoustic_diversity(Sbin1)$adi_left
-  CN.data.raw$ADIfbin2[i] <- acoustic_diversity(Sbin2)$adi_left
-  CN.data.raw$ADIfbin3[i] <- acoustic_diversity(Sbin3)$adi_left
-  CN.data.raw$ADIfbin4[i] <- acoustic_diversity(Sbin4)$adi_left
-  
-  
-  # acoustic evenness index
-  CN.data.raw$AEITotal[i] <- acoustic_evenness(Stotal)$aei_left
-  CN.data.raw$AEIfbin1[i] <- acoustic_evenness(Sbin1)$aei_left
-  CN.data.raw$AEIfbin2[i] <- acoustic_evenness(Sbin2)$aei_left
-  CN.data.raw$AEIfbin3[i] <- acoustic_evenness(Sbin3)$aei_left
-  CN.data.raw$AEIfbin4[i] <- acoustic_evenness(Sbin4)$aei_left
-  
   # spectrogram (freqency X time X amplitude) -- Total
   spectrogram.data.total <- spectro(Stotal, wl = 512, plot = F)
   
@@ -180,25 +153,28 @@ for (i in 1:nrow(CN.data.raw)) {
   # frequeny precision: 3 decimals
   spectrogram.df.total$Frequency <- round(spectrogram.df.total$Frequency, 3)
   
-  # amplitude rescale to dB (-50, -3) and precision to no decimals
-  spectrogram.df.total$Amplitude.rescaled <- rescale(spectrogram.df.total$Amplitude, to = c(-50,-3))
-  spectrogram.df.total$Amplitude.rescaled <- round(spectrogram.df.total$Amplitude.rescaled, 0)
+  ## amplitude rescale to dB (-50, -3) and precision to no decimals
+  #spectrogram.df.total$Amplitude.rescaled <- rescale(spectrogram.df.total$Amplitude, to = c(-50,-3))
+  #spectrogram.df.total$Amplitude.rescaled <- round(spectrogram.df.total$Amplitude.rescaled, 0)
   
-  # distribution of amplitude values
-  Amp.intesities.total <- hist(spectrogram.df.total$Amplitude.rescaled, breaks = 999, plot=F)
-  # maximum simple moving average value -- background noise
-  CN.data.raw$BGNTotal[i] <- round(Amp.intesities.total$breaks[which.max(SMA(Amp.intesities.total$counts, n=5))], 0)
+  ## distribution of amplitude values
+  #Amp.intesities.total <- hist(spectrogram.df.total$Amplitude.rescaled, breaks = 999, plot=F)
+  ## maximum simple moving average value -- background noise
+  #CN.data.raw$BGNTotal[i] <- round(Amp.intesities.total$breaks[which.max(SMA(Amp.intesities.total$counts, n=5))], 0)
   
-  # difference between maximum amplitude and background noise -- sound to noise ratio
-  CN.data.raw$S2NTotal[i] <- max(spectrogram.df.total$Amplitude.rescaled) - CN.data.raw$BGNTotal[i]
+  #most common amplitude value -- background noise
+  CN.data.raw$BGNTotal[i] <- as.numeric(names(sort(table(round(spectrogram.df.total$Amplitude, 0)),decreasing=T)[1]))
+  
+  ## difference between maximum amplitude and background noise -- sound to noise ratio
+  #CN.data.raw$S2NTotal[i] <- max(spectrogram.df.total$Amplitude.rescaled) - CN.data.raw$BGNTotal[i]
   
   # N times amplitude is 3dB greater than background noise
   spectrogram.df.total$NPeak <- NA
-  spectrogram.df.total$NPeak <- ifelse(spectrogram.df.total$Amplitude.rescaled>CN.data.raw$BGNTotal[i]+3, 1,0)
-  CN.data.raw$NPeakTotal[i] <- sum(spectrogram.df.total$NPeak, na.rm = T)
+  spectrogram.df.total$NPeak <- ifelse(spectrogram.df.total$Amplitude>CN.data.raw$BGNTotal[i]+3, 1,0)
+  #CN.data.raw$NPeakTotal[i] <- sum(spectrogram.df.total$NPeak, na.rm = T)
   
   # proportion of cells in spectrogram with amplitude 3dB greater than background noise -- acoustic activity
-  CN.data.raw$AATotal[i] <- round(CN.data.raw$NPeakTotal[i]/nrow(spectrogram.df.total),3)
+  CN.data.raw$AATotal[i] <- round(sum(spectrogram.df.total$NPeak, na.rm = T)/nrow(spectrogram.df.total),3)
   
   # spectrogram (freqency X time X amplitude) -- fbin1
   spectrogram.data.fbin1 <- spectro(Sbin1, wl = 512, plot = F)
@@ -222,25 +198,28 @@ for (i in 1:nrow(CN.data.raw)) {
   # frequeny precision: 3 decimals
   spectrogram.df.fbin1$Frequency <- round(spectrogram.df.fbin1$Frequency, 3)
   
-  # amplitude rescale to dB (-50, -3) and precision to no decimals
-  spectrogram.df.fbin1$Amplitude.rescaled <- rescale(spectrogram.df.fbin1$Amplitude, to = c(-50,-3))
-  spectrogram.df.fbin1$Amplitude.rescaled <- round(spectrogram.df.fbin1$Amplitude.rescaled, 0)
+  ## amplitude rescale to dB (-50, -3) and precision to no decimals
+  #spectrogram.df.fbin1$Amplitude.rescaled <- rescale(spectrogram.df.fbin1$Amplitude, to = c(-50,-3))
+  #spectrogram.df.fbin1$Amplitude.rescaled <- round(spectrogram.df.fbin1$Amplitude.rescaled, 0)
   
-  # distribution of amplitude values
-  Amp.intesities.fbin1 <- hist(spectrogram.df.fbin1$Amplitude.rescaled, breaks = 999, plot=F)
-  # maximum simple moving average value -- background noise
-  CN.data.raw$BGNfbin1[i] <- round(Amp.intesities.fbin1$breaks[which.max(SMA(Amp.intesities.fbin1$counts, n=5))], 0)
+  ## distribution of amplitude values
+  #Amp.intesities.fbin1 <- hist(spectrogram.df.fbin1$Amplitude.rescaled, breaks = 999, plot=F)
+  ## maximum simple moving average value -- background noise
+  #CN.data.raw$BGNfbin1[i] <- round(Amp.intesities.fbin1$breaks[which.max(SMA(Amp.intesities.fbin1$counts, n=5))], 0)
   
-  # difference between maximum amplitude and background noise -- sound to noise ratio
-  CN.data.raw$S2Nfbin1[i] <- max(spectrogram.df.fbin1$Amplitude.rescaled) - CN.data.raw$BGNfbin1[i]
+  #most common amplitude value -- background noise
+  CN.data.raw$BGNfbin1[i] <- as.numeric(names(sort(table(round(spectrogram.df.fbin1$Amplitude, 0)),decreasing=T)[1]))
+  
+  ## difference between maximum amplitude and background noise -- sound to noise ratio
+  #CN.data.raw$S2Nfbin1[i] <- max(spectrogram.df.fbin1$Amplitude) - CN.data.raw$BGNfbin1[i]
   
   # N times amplitude is 3dB greater than background noise
   spectrogram.df.fbin1$NPeak <- NA
-  spectrogram.df.fbin1$NPeak <- ifelse(spectrogram.df.fbin1$Amplitude.rescaled>CN.data.raw$BGNfbin1[i]+3, 1,0)
-  CN.data.raw$NPeakfbin1[i] <- sum(spectrogram.df.fbin1$NPeak, na.rm = T)
+  spectrogram.df.fbin1$NPeak <- ifelse(spectrogram.df.fbin1$Amplitude>CN.data.raw$BGNfbin1[i]+3, 1,0)
+  #CN.data.raw$NPeakfbin1[i] <- sum(spectrogram.df.fbin1$NPeak, na.rm = T)
   
   # proportion of cells in spectrogram with amplitude 3dB greater than background noise -- acoustic activity
-  CN.data.raw$AAfbin1[i] <- round(CN.data.raw$NPeakfbin1[i]/nrow(spectrogram.df.fbin1),3)
+  CN.data.raw$AAfbin1[i] <- round(sum(spectrogram.df.fbin1$NPeak, na.rm = T)/nrow(spectrogram.df.fbin1),3)
   
   # spectrogram (freqency X time X amplitude) -- fbin2
   spectrogram.data.fbin2 <- spectro(Sbin2, wl = 512, plot = F)
@@ -264,25 +243,28 @@ for (i in 1:nrow(CN.data.raw)) {
   # frequeny precision: 3 decimals
   spectrogram.df.fbin2$Frequency <- round(spectrogram.df.fbin2$Frequency, 3)
   
-  # amplitude rescale to dB (-50, -3) and precision to no decimals
-  spectrogram.df.fbin2$Amplitude.rescaled <- rescale(spectrogram.df.fbin2$Amplitude, to = c(-50,-3))
-  spectrogram.df.fbin2$Amplitude.rescaled <- round(spectrogram.df.fbin2$Amplitude.rescaled, 0)
+  ## amplitude rescale to dB (-50, -3) and precision to no decimals
+  #spectrogram.df.fbin2$Amplitude.rescaled <- rescale(spectrogram.df.fbin2$Amplitude, to = c(-50,-3))
+  #spectrogram.df.fbin2$Amplitude.rescaled <- round(spectrogram.df.fbin2$Amplitude.rescaled, 0)
   
-  # distribution of amplitude values
-  Amp.intesities.fbin2 <- hist(spectrogram.df.fbin2$Amplitude.rescaled, breaks = 999, plot=F)
-  # maximum simple moving average value -- background noise
-  CN.data.raw$BGNfbin2[i] <- round(Amp.intesities.fbin2$breaks[which.max(SMA(Amp.intesities.fbin2$counts, n=5))], 0)
+  ## distribution of amplitude values
+  #Amp.intesities.fbin2 <- hist(spectrogram.df.fbin2$Amplitude.rescaled, breaks = 999, plot=F)
+  ## maximum simple moving average value -- background noise
+  #CN.data.raw$BGNfbin2[i] <- round(Amp.intesities.fbin2$breaks[which.max(SMA(Amp.intesities.fbin2$counts, n=5))], 0)
   
-  # difference between maximum amplitude and background noise -- sound to noise ratio
-  CN.data.raw$S2Nfbin2[i] <- max(spectrogram.df.fbin2$Amplitude.rescaled) - CN.data.raw$BGNfbin2[i]
+  #most common amplitude value -- background noise
+  CN.data.raw$BGNfbin2[i] <- as.numeric(names(sort(table(round(spectrogram.df.fbin2$Amplitude, 0)),decreasing=T)[1]))
+  
+  ## difference between maximum amplitude and background noise -- sound to noise ratio
+  #CN.data.raw$S2Nfbin2[i] <- max(spectrogram.df.fbin2$Amplitude.rescaled) - CN.data.raw$BGNfbin2[i]
   
   # N times amplitude is 3dB greater than background noise
   spectrogram.df.fbin2$NPeak <- NA
-  spectrogram.df.fbin2$NPeak <- ifelse(spectrogram.df.fbin2$Amplitude.rescaled>CN.data.raw$BGNfbin2[i]+3, 1,0)
-  CN.data.raw$NPeakfbin2[i] <- sum(spectrogram.df.fbin2$NPeak, na.rm = T)
+  spectrogram.df.fbin2$NPeak <- ifelse(spectrogram.df.fbin2$Amplitude>CN.data.raw$BGNfbin2[i]+3, 1,0)
+  #CN.data.raw$NPeakfbin2[i] <- sum(spectrogram.df.fbin2$NPeak, na.rm = T)
   
   # proportion of cells in spectrogram with amplitude 3dB greater than background noise -- acoustic activity
-  CN.data.raw$AAfbin2[i] <- round(CN.data.raw$NPeakfbin2[i]/nrow(spectrogram.df.fbin2),3)
+  CN.data.raw$AAfbin2[i] <- round(sum(spectrogram.df.fbin2$NPeak, na.rm = T)/nrow(spectrogram.df.fbin2),3)
   
   # spectrogram (freqency X time X amplitude) -- fbin3
   spectrogram.data.fbin3 <- spectro(Sbin3, wl = 512, plot = F)
@@ -306,25 +288,28 @@ for (i in 1:nrow(CN.data.raw)) {
   # frequeny precision: 3 decimals
   spectrogram.df.fbin3$Frequency <- round(spectrogram.df.fbin3$Frequency, 3)
   
-  # amplitude rescale to dB (-50, -3) and precision to no decimals
-  spectrogram.df.fbin3$Amplitude.rescaled <- rescale(spectrogram.df.fbin3$Amplitude, to = c(-50,-3))
-  spectrogram.df.fbin3$Amplitude.rescaled <- round(spectrogram.df.fbin3$Amplitude.rescaled, 0)
+  ## amplitude rescale to dB (-50, -3) and precision to no decimals
+  #spectrogram.df.fbin3$Amplitude.rescaled <- rescale(spectrogram.df.fbin3$Amplitude, to = c(-50,-3))
+  #spectrogram.df.fbin3$Amplitude.rescaled <- round(spectrogram.df.fbin3$Amplitude.rescaled, 0)
   
-  # distribution of amplitude values
-  Amp.intesities.fbin3 <- hist(spectrogram.df.fbin3$Amplitude.rescaled, breaks = 999, plot=F)
-  # maximum simple moving average value -- background noise
-  CN.data.raw$BGNfbin3[i] <- round(Amp.intesities.fbin3$breaks[which.max(SMA(Amp.intesities.fbin3$counts, n=5))], 0)
+  ## distribution of amplitude values
+  #Amp.intesities.fbin3 <- hist(spectrogram.df.fbin3$Amplitude.rescaled, breaks = 999, plot=F)
+  ## maximum simple moving average value -- background noise
+  #CN.data.raw$BGNfbin3[i] <- round(Amp.intesities.fbin3$breaks[which.max(SMA(Amp.intesities.fbin3$counts, n=5))], 0)
   
-  # difference between maximum amplitude and background noise -- sound to noise ratio
-  CN.data.raw$S2Nfbin3[i] <- max(spectrogram.df.fbin3$Amplitude.rescaled) - CN.data.raw$BGNfbin3[i]
+  #most common amplitude value -- background noise
+  CN.data.raw$BGNfbin3[i] <- as.numeric(names(sort(table(round(spectrogram.df.fbin3$Amplitude, 0)),decreasing=T)[1]))
+  
+  ## difference between maximum amplitude and background noise -- sound to noise ratio
+  #CN.data.raw$S2Nfbin3[i] <- max(spectrogram.df.fbin3$Amplitude.rescaled) - CN.data.raw$BGNfbin3[i]
   
   # N times amplitude is 3dB greater than background noise
   spectrogram.df.fbin3$NPeak <- NA
-  spectrogram.df.fbin3$NPeak <- ifelse(spectrogram.df.fbin3$Amplitude.rescaled>CN.data.raw$BGNfbin3[i]+3, 1,0)
-  CN.data.raw$NPeakfbin3[i] <- sum(spectrogram.df.fbin3$NPeak, na.rm = T)
+  spectrogram.df.fbin3$NPeak <- ifelse(spectrogram.df.fbin3$Amplitude>CN.data.raw$BGNfbin3[i]+3, 1,0)
+  #CN.data.raw$NPeakfbin3[i] <- sum(spectrogram.df.fbin3$NPeak, na.rm = T)
   
   # proportion of cells in spectrogram with amplitude 3dB greater than background noise -- acoustic activity
-  CN.data.raw$AAfbin3[i] <- round(CN.data.raw$NPeakfbin3[i]/nrow(spectrogram.df.fbin3),3)
+  CN.data.raw$AAfbin3[i] <- round(sum(spectrogram.df.fbin3$NPeak, na.rm = T)/nrow(spectrogram.df.fbin3),3)
   
   # spectrogram (freqency X time X amplitude) -- fbin4
   spectrogram.data.fbin4 <- spectro(Sbin4, wl = 512, plot = F)
@@ -348,27 +333,68 @@ for (i in 1:nrow(CN.data.raw)) {
   # frequeny precision: 3 decimals
   spectrogram.df.fbin4$Frequency <- round(spectrogram.df.fbin4$Frequency, 3)
   
-  # amplitude rescale to dB (-50, -3) and precision to no decimals
-  spectrogram.df.fbin4$Amplitude.rescaled <- rescale(spectrogram.df.fbin4$Amplitude, to = c(-50,-3))
-  spectrogram.df.fbin4$Amplitude.rescaled <- round(spectrogram.df.fbin4$Amplitude.rescaled, 0)
+  ## amplitude rescale to dB (-50, -3) and precision to no decimals
+  #spectrogram.df.fbin4$Amplitude.rescaled <- rescale(spectrogram.df.fbin4$Amplitude, to = c(-50,-3))
+  #spectrogram.df.fbin4$Amplitude.rescaled <- round(spectrogram.df.fbin4$Amplitude.rescaled, 0)
   
-  # distribution of amplitude values
-  Amp.intesities.fbin4 <- hist(spectrogram.df.fbin4$Amplitude.rescaled, breaks = 999, plot=F)
-  # maximum simple moving average value -- background noise
-  CN.data.raw$BGNfbin4[i] <- round(Amp.intesities.fbin4$breaks[which.max(SMA(Amp.intesities.fbin4$counts, n=5))], 0)
+  ## distribution of amplitude values
+  #Amp.intesities.fbin4 <- hist(spectrogram.df.fbin4$Amplitude.rescaled, breaks = 999, plot=F)
+  ## maximum simple moving average value -- background noise
+  #CN.data.raw$BGNfbin4[i] <- round(Amp.intesities.fbin4$breaks[which.max(SMA(Amp.intesities.fbin4$counts, n=5))], 0)
   
-  # difference between maximum amplitude and background noise -- sound to noise ratio
-  CN.data.raw$S2Nfbin4[i] <- max(spectrogram.df.fbin4$Amplitude.rescaled) - CN.data.raw$BGNfbin4[i]
+  #most common amplitude value -- background noise
+  CN.data.raw$BGNfbin4[i] <- as.numeric(names(sort(table(round(spectrogram.df.fbin4$Amplitude, 0)),decreasing=T)[1]))
+  
+  ## difference between maximum amplitude and background noise -- sound to noise ratio
+  #CN.data.raw$S2Nfbin4[i] <- max(spectrogram.df.fbin4$Amplitude.rescaled) - CN.data.raw$BGNfbin4[i]
   
   # N times amplitude is 3dB greater than background noise
   spectrogram.df.fbin4$NPeak <- NA
-  spectrogram.df.fbin4$NPeak <- ifelse(spectrogram.df.fbin4$Amplitude.rescaled>CN.data.raw$BGNfbin4[i]+3, 1,0)
-  CN.data.raw$NPeakfbin4[i] <- sum(spectrogram.df.fbin4$NPeak, na.rm = T)
+  spectrogram.df.fbin4$NPeak <- ifelse(spectrogram.df.fbin4$Amplitude>CN.data.raw$BGNfbin4[i]+3, 1,0)
+  #CN.data.raw$NPeakfbin4[i] <- sum(spectrogram.df.fbin4$NPeak, na.rm = T)
   
   # proportion of cells in spectrogram with amplitude 3dB greater than background noise -- acoustic activity
-  CN.data.raw$AAfbin4[i] <- round(CN.data.raw$NPeakfbin4[i]/nrow(spectrogram.df.fbin4),3)
+  CN.data.raw$AAfbin4[i] <- round(sum(spectrogram.df.fbin4$NPeak, na.rm = T)/nrow(spectrogram.df.fbin4),3)
   
-  write.csv(CN.data.raw, "data/AcousticIndex_102022_v1.csv", na = "NA", row.names = F)
+  # total entropy of a time wave
+  CN.data.raw$HTotal[i] <- H(Stotal, envt="abs")
+  CN.data.raw$Hfbin1[i] <- H(Sbin1, envt="abs")
+  CN.data.raw$Hfbin2[i] <- H(Sbin2, envt="abs")
+  CN.data.raw$Hfbin3[i] <- H(Sbin3, envt="abs")
+  CN.data.raw$Hfbin4[i] <- H(Sbin4, envt="abs")
+  
+  # acoustic diversity index
+  CN.data.raw$ADITotal[i] <- acoustic_diversity(Stotal, db_threshold = CN.data.raw$BGNTotal[i])$adi_left
+  CN.data.raw$ADIfbin1[i] <- acoustic_diversity(Sbin1, db_threshold = CN.data.raw$BGNfbin1[i])$adi_left
+  CN.data.raw$ADIfbin2[i] <- acoustic_diversity(Sbin2, db_threshold = CN.data.raw$BGNfbin2[i])$adi_left
+  CN.data.raw$ADIfbin3[i] <- acoustic_diversity(Sbin3, db_threshold = CN.data.raw$BGNfbin3[i])$adi_left
+  CN.data.raw$ADIfbin4[i] <- acoustic_diversity(Sbin4, db_threshold = CN.data.raw$BGNfbin4[i])$adi_left
+  
+  
+  # acoustic evenness index
+  CN.data.raw$AEITotal[i] <- acoustic_evenness(Stotal, db_threshold = CN.data.raw$BGNTotal[i])$aei_left
+  CN.data.raw$AEIfbin1[i] <- acoustic_evenness(Sbin1, db_threshold = CN.data.raw$BGNfbin1[i])$aei_left
+  CN.data.raw$AEIfbin2[i] <- acoustic_evenness(Sbin2, db_threshold = CN.data.raw$BGNfbin2[i])$aei_left
+  CN.data.raw$AEIfbin3[i] <- acoustic_evenness(Sbin3, db_threshold = CN.data.raw$BGNfbin3[i])$aei_left
+  CN.data.raw$AEIfbin4[i] <- acoustic_evenness(Sbin4, db_threshold = CN.data.raw$BGNfbin4[i])$aei_left
+  
+  
+  # acoustic complexity index
+  CN.data.raw$ACITotal[i] <- acoustic_complexity(Stotal)$AciTotAll_left
+  CN.data.raw$ACIfbin1[i] <- acoustic_complexity(Sbin1)$AciTotAll_left
+  CN.data.raw$ACIfbin2[i] <- acoustic_complexity(Sbin2)$AciTotAll_left
+  CN.data.raw$ACIfbin3[i] <- acoustic_complexity(Sbin3)$AciTotAll_left
+  CN.data.raw$ACIfbin4[i] <- acoustic_complexity(Sbin4)$AciTotAll_left
+  
+  
+  # bioacoustic Index
+  CN.data.raw$BAITotal[i] <- bioacoustic_index(Stotal)$left_area
+  CN.data.raw$BAIfbin1[i] <- bioacoustic_index(Sbin1)$left_area
+  CN.data.raw$BAIfbin2[i] <- bioacoustic_index(Sbin2)$left_area
+  CN.data.raw$BAIfbin3[i] <- bioacoustic_index(Sbin3)$left_area
+  CN.data.raw$BAIfbin4[i] <- bioacoustic_index(Sbin4)$left_area
+  
+  write.csv(CN.data.raw, "data/AcousticIndex_042025_v1.csv", na = "NA", row.names = F)
   cat('\n>finalizado', CN.data.raw$ldt.index[i], 'faltam', nrow(CN.data.raw)-i, '<\n')
   
   rm(list= ls()[!(ls() %in% c("CN.data.raw", "i"))])
@@ -381,7 +407,7 @@ for (i in 1:nrow(CN.data.raw)) {
 
 #### Cleaning based on data ####
 
-CN.data.raw <- read.csv("data/AcousticIndex_102022_v1.csv", header = T)
+CN.data.raw <- read.csv("data/AcousticIndex_042025_v1.csv", header = T)
 ## checking
 #head(CN.data.raw);tail(CN.data.raw)
 #str(CN.data.raw)
@@ -391,38 +417,38 @@ CN.data.raw <- read.csv("data/AcousticIndex_102022_v1.csv", header = T)
 CN.data.raw.ed <- CN.data.raw[!is.na(CN.data.raw$AEITotal),]
 
 # saving
-write.csv(CN.data.raw.ed, "data/AcousticIndex_102022_v2.csv", na = "NA", row.names = F)
+write.csv(CN.data.raw.ed, "data/AcousticIndex_042025_v2.csv", na = "NA", row.names = F)
 #
 
-# excluding audios based on background noise [<= -40 or >= -10 dB]
+# excluding audios based on background noise [< -50 dB]
 CN.data.raw.ed2 <- CN.data.raw.ed
 
 hist(CN.data.raw.ed2$BGNTotal)
 range(CN.data.raw.ed2$BGNTotal)
-nrow(CN.data.raw.ed2[CN.data.raw.ed2$BGNTotal <= -40 | CN.data.raw.ed2$BGNTotal >= -10, ])
-CN.data.raw.ed2[CN.data.raw.ed2$BGNTotal <= -40  | CN.data.raw.ed2$BGNTotal >= -10, "ldt.index"]
+nrow(CN.data.raw.ed2[CN.data.raw.ed2$BGNTotal < -50, ])
+CN.data.raw.ed2[CN.data.raw.ed2$BGNTotal < -50, "ldt.index"]
 
-exclude <- CN.data.raw.ed2[CN.data.raw.ed2$BGNTotal <= -40 | CN.data.raw.ed2$BGNTotal >= -10, "path2file"]
+exclude <- CN.data.raw.ed2[CN.data.raw.ed2$BGNTotal < -50, "path2file"]
 ## checking
 #(s <- exclude[1])
 #play(readWave(s))
 #
 CN.data.raw.ed2 <- CN.data.raw.ed2[!CN.data.raw.ed2$path2file %in% exclude,]
 
-# excluding audios based on acoustic activity [<= 0.001]
+# excluding audios based on acoustic activity [<= 0.01]
 hist(CN.data.raw.ed2$AATotal)
 range(CN.data.raw.ed2$AATotal)
-nrow(CN.data.raw.ed2[CN.data.raw.ed2$AATotal <= .001, ])
-CN.data.raw.ed2[CN.data.raw.ed2$AATotal <= .001, "ldt.index"]
+nrow(CN.data.raw.ed2[CN.data.raw.ed2$AATotal < .01, ])
+CN.data.raw.ed2[CN.data.raw.ed2$AATotal < .01, "ldt.index"]
 
-exclude <- CN.data.raw.ed2[CN.data.raw.ed2$AATotal <= .001, "path2file"]
+exclude <- CN.data.raw.ed2[CN.data.raw.ed2$AATotal <= .01, "path2file"]
 ## checking
 #(s <- exclude[1])
 #play(readWave(s))
 #
 CN.data.raw.ed2 <- CN.data.raw.ed2[!CN.data.raw.ed2$path2file %in% exclude,]
 
-write.csv(CN.data.raw.ed2, "data/AcousticIndex_102022_v3.csv", na = "NA", row.names = F)
+write.csv(CN.data.raw.ed2, "data/AcousticIndex_042025_v3.csv", na = "NA", row.names = F)
 
 #rm(list= ls()[!(ls() %in% c("CN.data.raw.ed2"))])
 #gc()
