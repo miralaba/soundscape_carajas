@@ -448,10 +448,13 @@ exclude <- CN.data.raw.ed2[CN.data.raw.ed2$AATotal <= .01, "path2file"]
 #
 CN.data.raw.ed2 <- CN.data.raw.ed2[!CN.data.raw.ed2$path2file %in% exclude,]
 
+# excluding audios from May 2022
+exclude <- CN.data.raw.ed2 %>% filter(Local == "CN2", Month == 5, Year == 2022) %>% dplyr::select(path2file) %>% pull()
+CN.data.raw.ed2 <- CN.data.raw.ed2[!CN.data.raw.ed2$path2file %in% exclude,]
+
 write.csv(CN.data.raw.ed2, "data/AcousticIndex_042025_v3.csv", na = "NA", row.names = F)
 
 #rm(list= ls()[!(ls() %in% c("CN.data.raw.ed2"))])
 #gc()
 #
-
 
