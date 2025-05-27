@@ -235,21 +235,17 @@ CN.data.raw <- read.csv("data/AcousticIndex_042025_v1.csv", header = T)
 #summary(CN.data.raw)
 
 # excluding data based on size file [<5MB -- see line 130]
-CN.data.raw.ed <- CN.data.raw[!is.na(CN.data.raw$AEITotal),]
+CN.data.raw.ed <- CN.data.raw[!is.na(CN.data.raw$BGNTotal),]
 
-# saving
-write.csv(CN.data.raw.ed, "data/AcousticIndex_042025_v2.csv", na = "NA", row.names = F)
-#
-
-# excluding audios based on background noise [< -50 dB]
+# excluding audios based on background noise [< -80 dB]
 CN.data.raw.ed2 <- CN.data.raw.ed
 
 hist(CN.data.raw.ed2$BGNTotal)
 range(CN.data.raw.ed2$BGNTotal)
-nrow(CN.data.raw.ed2[CN.data.raw.ed2$BGNTotal < -50, ])
-CN.data.raw.ed2[CN.data.raw.ed2$BGNTotal < -50, "ldt.index"]
+nrow(CN.data.raw.ed2[CN.data.raw.ed2$BGNTotal < -80, ])
+CN.data.raw.ed2[CN.data.raw.ed2$BGNTotal < -80, "ldt.index"]
 
-exclude <- CN.data.raw.ed2[CN.data.raw.ed2$BGNTotal < -50, "path2file"]
+exclude <- CN.data.raw.ed2[CN.data.raw.ed2$BGNTotal < -80, "path2file"]
 ## checking
 #(s <- exclude[1])
 #play(readWave(s))
@@ -273,7 +269,7 @@ CN.data.raw.ed2 <- CN.data.raw.ed2[!CN.data.raw.ed2$path2file %in% exclude,]
 exclude <- CN.data.raw.ed2 %>% filter(Local == "CN2", Month == 5, Year == 2022) %>% dplyr::select(path2file) %>% pull()
 CN.data.raw.ed2 <- CN.data.raw.ed2[!CN.data.raw.ed2$path2file %in% exclude,]
 
-write.csv(CN.data.raw.ed2, "data/AcousticIndex_042025_v3.csv", na = "NA", row.names = F)
+write.csv(CN.data.raw.ed2, "data/AcousticIndex_042025_v2.csv", na = "NA", row.names = F)
 
 #rm(list= ls()[!(ls() %in% c("CN.data.raw.ed2"))])
 #gc()
