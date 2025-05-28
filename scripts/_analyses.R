@@ -33,9 +33,9 @@ library(cowplot)
 
 
 # soundscape index
-CN.data.raw.ed2 <- read.csv("data/AcousticIndex_042025_v3.csv", header = T)
+CN.data.raw.ed2 <- read.csv("data/AcousticIndex_042025_v2.csv", header = T)
 # reordering columns
-CN.data.raw.ed2 <- CN.data.raw.ed2[,c(1:7,43,8:42,44)]
+CN.data.raw.ed2 <- CN.data.raw.ed2[,c(1:7,35,8:34,36)]
 
 #### exploratory ####
 # copy
@@ -97,10 +97,10 @@ str(CN.data)
 
 
 # reordering columns
-CN.data <- CN.data[,c(1,8,2,45,46,59,3:7,60,9:43,47:51,61,62,55:58,52:54,44)]
+CN.data <- CN.data[,c(1,8,2,37,38,51,3:7,52,10,11,9,12:35,39:43,53,54,47:50,44:46,36)]
 
 # saving
-write.csv(CN.data, "data/AcousticIndex_042025_v4.csv", row.names = F)
+write.csv(CN.data, "data/AcousticIndex_042025_v3.csv", row.names = F)
 
 #### between minutes by points ####
 dir.create("results")
@@ -121,7 +121,6 @@ sampling.overview <- sampling.overview[,c(1,7:9,2:4,6,5)]
 # obs:
 # Locals CN11, CN12, CN13 and CN14 need check the number of days for 2022 sampling
 # these points started record in april, stoped and then re-started in may
-sampling.overview[sampling.overview$Local=="CN6" & sampling.overview$Year==2022,"N_days"] <- 6
 sampling.overview[sampling.overview$Local=="CN11" & sampling.overview$Year==2022,"N_days"] <- 7
 sampling.overview[sampling.overview$Local=="CN12" & sampling.overview$Year==2022,"N_days"] <- 8
 sampling.overview[sampling.overview$Local=="CN13" & sampling.overview$Year==2022,"N_days"] <- 8
@@ -246,15 +245,15 @@ ggdraw(g1) + draw_plot(g2, x = .14, y = .4, width = 0.16, height = 0.26)
 
 dev.off()
 
-rm(list= ls()[!(ls() %in% c("CN.data"))])
+rm(list= ls()[!(ls() %in% c("CN.data", "sampling.overview"))])
 gc()
 
 #### difference between time period ####
 # creating data frame
 
-time.period.diff <- data.frame(index = rep(c("H", "BGN", "AA", "ADI", "AEI", "ACI", "BAI"), 70),
-                                frequency.bin = rep(rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 7), 14),
-                                local = rep(unique(CN.data$Local), each = 35),
+time.period.diff <- data.frame(index = rep(c("H", "ADI", "AEI", "ACI", "BAI"), 70),
+                                frequency.bin = rep(rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 5), 14),
+                                local = rep(unique(CN.data$Local), each = 25),
                                 effect.size = NA, n.sig = NA)
 
 c=1
@@ -262,9 +261,9 @@ for (l in unique(CN.data$Local)) {
   
   cnx <- CN.data[CN.data$Local==l,]
   
-  for (i in grep("ID", names(CN.data)[13:47], invert = T, value = T)) {
+  for (i in grep("ID", names(CN.data)[15:39], invert = T, value = T)) {
     
-    cnx.index <- cnx[sample(1:nrow(cnx), 500, replace = T), c(i,"time_period")]
+    cnx.index <- cnx[sample(1:nrow(cnx), 1500, replace = T), c(i,"time_period")]
     
     if (all(is.na(cnx.index[,i])) | all(cnx.index[,i]==0)) {
       
@@ -296,7 +295,7 @@ for (l in unique(CN.data$Local)) {
 str(time.period.diff)
 
 time.period.diff <- time.period.diff %>% 
-                       mutate(index=factor(index, levels = c("H", "ADI", "AEI", "ACI", "BAI", "BGN", "AA")),
+                       mutate(index=factor(index, levels = c("H", "ADI", "AEI", "ACI", "BAI")),
                               frequency.bin=factor(frequency.bin, levels = c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1")),
                               local=factor(local, levels = paste0("CN", seq(1:14))))
   
@@ -331,14 +330,14 @@ time.period.diff %>%
 dev.off()
 #
 
-time.period.diff.total <- data.frame(index = rep(c("H", "BGN", "AA", "ADI", "AEI", "ACI", "BAI"), 5),
-                                     frequency.bin = rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 7),
+time.period.diff.total <- data.frame(index = rep(c("H", "ADI", "AEI", "ACI", "BAI"), 5),
+                                     frequency.bin = rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 5),
                                      effect.size = NA, n.sig = NA)
 
 c=1
-for (i in grep("ID", names(CN.data)[13:47], invert = T, value = T)) {
+for (i in grep("ID", names(CN.data)[15:39], invert = T, value = T)) {
   
-  cnx.index <- CN.data %>% group_by(Local) %>% sample_n(size = 500, replace = T) %>% ungroup() %>% dplyr::select(time_period, i)
+  cnx.index <- CN.data %>% group_by(Local) %>% sample_n(size = 1500, replace = T) %>% ungroup() %>% dplyr::select(time_period, i)
   
   if (all(is.na(cnx.index[,i])) | all(cnx.index[,i]==0)) {
     
@@ -363,7 +362,7 @@ for (i in grep("ID", names(CN.data)[13:47], invert = T, value = T)) {
 str(time.period.diff.total)
 
 time.period.diff.total <- time.period.diff.total %>% 
-                          mutate(index=factor(index, levels = c("H", "ADI", "AEI", "ACI", "BAI", "BGN", "AA")),
+                          mutate(index=factor(index, levels = c("H", "ADI", "AEI", "ACI", "BAI")),
                                  frequency.bin=factor(frequency.bin, levels = c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1")))
 
 
@@ -399,14 +398,14 @@ dev.off()
 
 CN.data.2019 <- CN.data[CN.data$Year=="2019",]
 
-time.period.diff.total.2019 <- data.frame(index = rep(c("H", "BGN", "AA", "ADI", "AEI", "ACI", "BAI"), 5),
-                                     frequency.bin = rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 7),
+time.period.diff.total.2019 <- data.frame(index = rep(c("H", "ADI", "AEI", "ACI", "BAI"), 5),
+                                     frequency.bin = rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 5),
                                      effect.size = NA, n.sig = NA)
 
 c=1
-for (i in grep("ID", names(CN.data)[13:47], invert = T, value = T)) {
+for (i in grep("ID", names(CN.data)[15:39], invert = T, value = T)) {
   
-  cnx.index <- CN.data.2019 %>% group_by(Local) %>% sample_n(size = 35, replace = T) %>% ungroup() %>% dplyr::select(time_period, i)
+  cnx.index <- CN.data.2019 %>% group_by(Local) %>% sample_n(size = 500, replace = T) %>% ungroup() %>% dplyr::select(time_period, i)
   
   if (all(is.na(cnx.index[,i])) | all(cnx.index[,i]==0)) {
     
@@ -431,7 +430,7 @@ for (i in grep("ID", names(CN.data)[13:47], invert = T, value = T)) {
 str(time.period.diff.total.2019)
 
 time.period.diff.total.2019 <- time.period.diff.total.2019 %>% 
-  mutate(index=factor(index, levels = c("H", "ADI", "AEI", "ACI", "BAI", "BGN", "AA")),
+  mutate(index=factor(index, levels = c("H", "ADI", "AEI", "ACI", "BAI")),
          frequency.bin=factor(frequency.bin, levels = c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1")))
 
 
@@ -467,14 +466,14 @@ dev.off()
 
 CN.data.2022 <- CN.data[CN.data$Year=="2022",]
 
-time.period.diff.total.2022 <- data.frame(index = rep(c("H", "BGN", "AA", "ADI", "AEI", "ACI", "BAI"), 5),
-                                          frequency.bin = rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 7),
+time.period.diff.total.2022 <- data.frame(index = rep(c("H", "ADI", "AEI", "ACI", "BAI"), 5),
+                                          frequency.bin = rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 5),
                                           effect.size = NA, n.sig = NA)
 
 c=1
-for (i in grep("ID", names(CN.data)[13:47], invert = T, value = T)) {
+for (i in grep("ID", names(CN.data)[15:39], invert = T, value = T)) {
   
-  cnx.index <- CN.data.2022 %>% group_by(Local) %>% sample_n(size = 227, replace = T) %>% ungroup() %>% dplyr::select(time_period, i)
+  cnx.index <- CN.data.2022 %>% group_by(Local) %>% sample_n(size = 500, replace = T) %>% ungroup() %>% dplyr::select(time_period, i)
   
   if (all(is.na(cnx.index[,i])) | all(cnx.index[,i]==0)) {
     
@@ -499,7 +498,7 @@ for (i in grep("ID", names(CN.data)[13:47], invert = T, value = T)) {
 str(time.period.diff.total.2022)
 
 time.period.diff.total.2022 <- time.period.diff.total.2022 %>% 
-  mutate(index=factor(index, levels = c("H", "ADI", "AEI", "ACI", "BAI", "BGN", "AA")),
+  mutate(index=factor(index, levels = c("H", "ADI", "AEI", "ACI", "BAI")),
          frequency.bin=factor(frequency.bin, levels = c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1")))
 
 
