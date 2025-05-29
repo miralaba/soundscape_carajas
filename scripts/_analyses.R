@@ -99,6 +99,9 @@ str(CN.data)
 # reordering columns
 CN.data <- CN.data[,c(1,8,2,37,38,51,3:7,52,10,11,9,12:35,39:43,53,54,47:50,44:46,36)]
 
+# excluding row with time_period == NA, CN14
+CN.data <- CN.data %>% filter(!is.na(time_period))
+
 # saving
 write.csv(CN.data, "data/AcousticIndex_042025_v3.csv", row.names = F)
 
@@ -249,6 +252,9 @@ rm(list= ls()[!(ls() %in% c("CN.data", "sampling.overview"))])
 gc()
 
 #### difference between time period ####
+# checking minimum sample
+sample.teste <- CN.data %>% group_by(Local, time_period) %>% summarise(n())
+
 # creating data frame
 
 time.period.diff <- data.frame(index = rep(c("H", "ADI", "AEI", "ACI", "BAI"), 70),
@@ -263,7 +269,7 @@ for (l in unique(CN.data$Local)) {
   
   for (i in grep("ID", names(CN.data)[15:39], invert = T, value = T)) {
     
-    cnx.index <- cnx[sample(1:nrow(cnx), 1500, replace = T), c(i,"time_period")]
+    cnx.index <- CN.data %>% group_by(time_period) %>% sample_n(size = 100, replace = T) %>% ungroup() %>% dplyr::select(time_period, i)
     
     if (all(is.na(cnx.index[,i])) | all(cnx.index[,i]==0)) {
       
@@ -330,6 +336,9 @@ time.period.diff %>%
 dev.off()
 #
 
+
+sample.teste <- CN.data %>% group_by(time_period) %>% summarise(n())
+
 time.period.diff.total <- data.frame(index = rep(c("H", "ADI", "AEI", "ACI", "BAI"), 5),
                                      frequency.bin = rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 5),
                                      effect.size = NA, n.sig = NA)
@@ -337,7 +346,7 @@ time.period.diff.total <- data.frame(index = rep(c("H", "ADI", "AEI", "ACI", "BA
 c=1
 for (i in grep("ID", names(CN.data)[15:39], invert = T, value = T)) {
   
-  cnx.index <- CN.data %>% group_by(Local) %>% sample_n(size = 1500, replace = T) %>% ungroup() %>% dplyr::select(time_period, i)
+  cnx.index <- CN.data %>% group_by(time_period) %>% sample_n(size = 2000, replace = T) %>% ungroup() %>% dplyr::select(time_period, i)
   
   if (all(is.na(cnx.index[,i])) | all(cnx.index[,i]==0)) {
     
@@ -398,6 +407,8 @@ dev.off()
 
 CN.data.2019 <- CN.data[CN.data$Year=="2019",]
 
+sample.teste <- CN.data.2019 %>% group_by(time_period) %>% summarise(n())
+
 time.period.diff.total.2019 <- data.frame(index = rep(c("H", "ADI", "AEI", "ACI", "BAI"), 5),
                                      frequency.bin = rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 5),
                                      effect.size = NA, n.sig = NA)
@@ -405,7 +416,7 @@ time.period.diff.total.2019 <- data.frame(index = rep(c("H", "ADI", "AEI", "ACI"
 c=1
 for (i in grep("ID", names(CN.data)[15:39], invert = T, value = T)) {
   
-  cnx.index <- CN.data.2019 %>% group_by(Local) %>% sample_n(size = 500, replace = T) %>% ungroup() %>% dplyr::select(time_period, i)
+  cnx.index <- CN.data.2019 %>% group_by(time_period) %>% sample_n(size = 1000, replace = T) %>% ungroup() %>% dplyr::select(time_period, i)
   
   if (all(is.na(cnx.index[,i])) | all(cnx.index[,i]==0)) {
     
@@ -466,6 +477,8 @@ dev.off()
 
 CN.data.2022 <- CN.data[CN.data$Year=="2022",]
 
+sample.teste <- CN.data.2022 %>% group_by(time_period) %>% summarise(n())
+
 time.period.diff.total.2022 <- data.frame(index = rep(c("H", "ADI", "AEI", "ACI", "BAI"), 5),
                                           frequency.bin = rep(c("Total", "0.3-4", "4-12", "0.3-12", "12-22.1"), each = 5),
                                           effect.size = NA, n.sig = NA)
@@ -473,7 +486,7 @@ time.period.diff.total.2022 <- data.frame(index = rep(c("H", "ADI", "AEI", "ACI"
 c=1
 for (i in grep("ID", names(CN.data)[15:39], invert = T, value = T)) {
   
-  cnx.index <- CN.data.2022 %>% group_by(Local) %>% sample_n(size = 500, replace = T) %>% ungroup() %>% dplyr::select(time_period, i)
+  cnx.index <- CN.data.2022 %>% group_by(time_period) %>% sample_n(size = 1000, replace = T) %>% ungroup() %>% dplyr::select(time_period, i)
   
   if (all(is.na(cnx.index[,i])) | all(cnx.index[,i]==0)) {
     
@@ -532,7 +545,7 @@ time.period.diff.total.2022 %>%
 dev.off()
 #
 
-rm(list= ls()[(ls() %in% c("exclude","c","l","i","cnx","cnx.index"))])
+rm(list= ls()[(ls() %in% c("exclude","c","l","i","cnx","cnx.index", "sample.teste"))])
 gc()
 
 #### Compute summary statistics by groups - count, min, max, mean, sd ####
@@ -609,21 +622,21 @@ p1 <- CN.data %>% dplyr::select("Local", "Min", "HTotal") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("H", breaks=c("0", "36", "72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0", "36", "72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols) +
   ggtitle("[0.3-22.1kHz]") +
-  scale_y_continuous("", limits = c(0.75,1.0)) +
-  guides(col = guide_legend(nrow = 2, byrow = TRUE))+
+  scale_y_continuous("H", limits = c(0.75,1.0)) +
+  guides(col = guide_legend(nrow = 4, byrow = TRUE))+
   theme_minimal() +
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.title = element_blank(),
         legend.text = element_text(family = "serif", size = 38),
-        legend.position = "bottom", legend.direction = "horizontal", legend.justification = "center")
+        legend.position = "right", legend.direction = "horizontal", legend.justification = "center")
 
 p2 <- CN.data %>% dplyr::select("Local", "Min", "ADITotal") %>% 
   pivot_longer(cols = ADITotal, names_to = "Index", values_to = "Values", values_ptypes = numeric()) %>% 
@@ -635,17 +648,17 @@ p2 <- CN.data %>% dplyr::select("Local", "Min", "ADITotal") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("ADI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols) +
   ggtitle("") +
-  scale_y_continuous("", limits = c(1.6,2.3)) +
+  scale_y_continuous("ADI", limits = c(1.6,2.3)) +
   #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
   theme_minimal() +
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -660,17 +673,17 @@ p3 <- CN.data %>% dplyr::select("Local", "Min", "AEITotal") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("AEI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00"))+  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00"))+  
   scale_color_manual(values = cols)+
   ggtitle("") +
-  scale_y_continuous("", limits = c(0,.6)) +
+  scale_y_continuous("AEI", limits = c(0,.6)) +
   #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
   theme_minimal() +
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -684,17 +697,17 @@ p4 <- CN.data %>% dplyr::select("Local", "Min", "ACITotal") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("ACI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") +
-  scale_y_continuous("", limits = c(1500,2000)) +
+  scale_y_continuous("ACI", limits = c(1500,2000)) +
   #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
   theme_minimal() +
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -708,16 +721,16 @@ p5 <- CN.data %>% dplyr::select("Local", "Min", "BAITotal") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("BAI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
-  ggtitle("") + ylab("") +
+  ggtitle("") + ylab("BAI") +
   #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
   theme_minimal() +
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -731,41 +744,17 @@ p6 <- CN.data %>% dplyr::select("Local", "Min", "BGNTotal") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("BGN", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") +
-  scale_y_continuous("", limits = c(-50,0)) +
-  #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
-  theme_minimal() +
-  theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
-        axis.title = element_text(family = "serif", size = 48),
-        axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
-        strip.text = element_text(family = "serif", size = 48),
-        legend.position = "none")
-
-p7 <- CN.data %>% dplyr::select("Local", "Min", "AATotal") %>% 
-  pivot_longer(cols = AATotal, names_to = "Index", values_to = "Values", values_ptypes = numeric()) %>% 
-  mutate(Index = gsub("Total", "", Index)) %>% 
-  ggplot(aes(Min, Values, group = Local,  colour = Local)) +
-  geom_point(alpha = .25, size = 1.5, show.legend = F) +
-  geom_smooth(linewidth=3, method = "gam", se = F) +
-  geom_vline(aes(xintercept=39), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("AA", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
-  scale_color_manual(values = cols)+
-  ggtitle("") +
-  scale_y_continuous("", limits = c(.1,.6)) +
+  scale_y_continuous("BGN", limits = c(-50,0)) +
   #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
   theme_minimal() +
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text = element_text(family = "serif", size = 32, hjust = 1),
-        axis.line.y = element_line(size = 2), axis.line.x = element_line(size = 2),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_line(size = 2),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_line(linewidth = 2),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_line(linewidth = 2),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -783,7 +772,7 @@ p1fbin2 <- CN.data %>% dplyr::select("Local", "Min", "Hfbin2") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("H", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("[4-12kHz]") +
   scale_y_continuous("", limits = c(0.75,1)) +
@@ -792,8 +781,8 @@ p1fbin2 <- CN.data %>% dplyr::select("Local", "Min", "Hfbin2") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -807,7 +796,7 @@ p2fbin2 <- CN.data %>% dplyr::select("Local", "Min", "ADIfbin2") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("ADI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") +
   scale_y_continuous("", limits = c(1.6,2.3)) +
@@ -816,8 +805,8 @@ p2fbin2 <- CN.data %>% dplyr::select("Local", "Min", "ADIfbin2") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -831,7 +820,7 @@ p3fbin2 <- CN.data %>% dplyr::select("Local", "Min", "AEIfbin2") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("AEI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") +
   scale_y_continuous("", limits = c(0,.6)) +
@@ -840,8 +829,8 @@ p3fbin2 <- CN.data %>% dplyr::select("Local", "Min", "AEIfbin2") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -855,7 +844,7 @@ p4fbin2 <- CN.data %>% dplyr::select("Local", "Min", "ACIfbin2") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("ACI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") +
   scale_y_continuous("", limits = c(1500,2000)) +
@@ -864,8 +853,8 @@ p4fbin2 <- CN.data %>% dplyr::select("Local", "Min", "ACIfbin2") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -879,81 +868,32 @@ p5fbin2 <- CN.data %>% dplyr::select("Local", "Min", "BAIfbin2") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("BAI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") + ylab("") +
   #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
   theme_minimal() +
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
-        axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
-        strip.text = element_text(family = "serif", size = 48),
-        legend.position = "none")
-
-p6fbin2 <- CN.data %>% dplyr::select("Local", "Min", "BGNfbin2") %>% 
-  pivot_longer(cols = BGNfbin2, names_to = "Index", values_to = "Values", values_ptypes = numeric()) %>% 
-  mutate(Index = gsub("fbin2", "", Index)) %>% 
-  ggplot(aes(Min, Values, group = Local,  colour = Local)) +
-  geom_point(alpha = .25, size = 1.5, show.legend = F) +
-  geom_smooth(linewidth=3, method = "gam", se = F) +
-  geom_vline(aes(xintercept=39), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("BGN", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
-  scale_color_manual(values = cols)+
-  ggtitle("") +
-  scale_y_continuous("", limits = c(-50,0)) +
-  #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
-  theme_minimal() +
-  theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
-        axis.title = element_text(family = "serif", size = 48),
-        axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
-        strip.text = element_text(family = "serif", size = 48),
-        legend.position = "none")
-
-p7fbin2 <- CN.data %>% dplyr::select("Local", "Min", "AAfbin2") %>% 
-  pivot_longer(cols = AAfbin2, names_to = "Index", values_to = "Values", values_ptypes = numeric()) %>% 
-  mutate(Index = gsub("fbin2", "", Index)) %>% 
-  ggplot(aes(Min, Values, group = Local,  colour = Local)) +
-  geom_point(alpha = .25, size = 1.5, show.legend = F) +
-  geom_smooth(linewidth=3, method = "gam", se = F) +
-  geom_vline(aes(xintercept=39), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("AA", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
-  scale_color_manual(values = cols)+
-  ggtitle("") +
-  scale_y_continuous("", limits = c(.1,.6)) +
-  #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
-  theme_minimal() +
-  theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
-        axis.title = element_text(family = "serif", size = 48),
         axis.text = element_text(family = "serif", size = 32, hjust = 1),
-        axis.line.y = element_line(size = 2), axis.line.x = element_line(size = 2),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_line(size = 2),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_line(linewidth = 2),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_line(linewidth = 2),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
 
 
-prow <- plot_grid(p1 + theme(legend.position='none'), 
-                  p1fbin2, p2, p2fbin2, p3, p3fbin2, p4, p4fbin2,
-                  p5, p5fbin2, p6, p6fbin2, p7, p7fbin2,
-                  ncol=2, axis = "b", align = "hv")
-
-p.legend <- get_plot_component(p1, 'guide-box-bottom', return_all = TRUE)
-
+p.legend <- get_plot_component(p1, 'guide-box-right', return_all = TRUE)
 
 
 png("results/tendency_curve_gam.png", width = 23.38583, height = 33.11024, units = "in", res = 300, pointsize = 4)
 
-ggdraw(plot_grid(prow, p.legend, ncol = 1, rel_heights = c(1, .05)))
+ggdraw(
+  plot_grid(p1 + theme(legend.position='none'), 
+            p1fbin2, p2, p2fbin2, p3, p3fbin2, p4, p4fbin2,
+            p5, p5fbin2, p6, p.legend,
+            ncol=2, axis = "b", align = "hv")
+)
 
 dev.off()
 
@@ -971,7 +911,7 @@ p1fbin1 <- CN.data %>% dplyr::select("Local", "Min", "Hfbin1") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("H", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("[0.3-4kHz]") +
   scale_y_continuous("", limits = c(0.75,1)) +
@@ -980,8 +920,8 @@ p1fbin1 <- CN.data %>% dplyr::select("Local", "Min", "Hfbin1") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -995,7 +935,7 @@ p2fbin1 <- CN.data %>% dplyr::select("Local", "Min", "ADIfbin1") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("ADI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") +
   scale_y_continuous("", limits = c(1.6,2.3)) +
@@ -1004,8 +944,8 @@ p2fbin1 <- CN.data %>% dplyr::select("Local", "Min", "ADIfbin1") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -1019,7 +959,7 @@ p3fbin1 <- CN.data %>% dplyr::select("Local", "Min", "AEIfbin1") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("AEI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") +
   scale_y_continuous("", limits = c(0,.6)) +
@@ -1028,8 +968,8 @@ p3fbin1 <- CN.data %>% dplyr::select("Local", "Min", "AEIfbin1") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -1043,7 +983,7 @@ p4fbin1 <- CN.data %>% dplyr::select("Local", "Min", "ACIfbin1") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("ACI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") +
   scale_y_continuous("", limits = c(1500,2000)) +
@@ -1052,8 +992,8 @@ p4fbin1 <- CN.data %>% dplyr::select("Local", "Min", "ACIfbin1") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -1067,64 +1007,16 @@ p5fbin1 <- CN.data %>% dplyr::select("Local", "Min", "BAIfbin1") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("BAI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") + ylab("") +
   #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
   theme_minimal() +
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
-        axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
-        strip.text = element_text(family = "serif", size = 48),
-        legend.position = "none")
-
-p6fbin1 <- CN.data %>% dplyr::select("Local", "Min", "BGNfbin1") %>% 
-  pivot_longer(cols = BGNfbin1, names_to = "Index", values_to = "Values", values_ptypes = numeric()) %>% 
-  mutate(Index = gsub("fbin1", "", Index)) %>% 
-  ggplot(aes(Min, Values, group = Local,  colour = Local)) +
-  geom_point(alpha = .25, size = 1.5, show.legend = F) +
-  geom_smooth(linewidth=3, method = "gam", se = F) +
-  geom_vline(aes(xintercept=39), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("BGN", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
-  scale_color_manual(values = cols)+
-  ggtitle("") +
-  scale_y_continuous("", limits = c(-50,0)) +
-  #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
-  theme_minimal() +
-  theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
-        axis.title = element_text(family = "serif", size = 48),
-        axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
-        strip.text = element_text(family = "serif", size = 48),
-        legend.position = "none")
-
-p7fbin1 <- CN.data %>% dplyr::select("Local", "Min", "AAfbin1") %>% 
-  pivot_longer(cols = AAfbin1, names_to = "Index", values_to = "Values", values_ptypes = numeric()) %>% 
-  mutate(Index = gsub("fbin1", "", Index)) %>% 
-  ggplot(aes(Min, Values, group = Local,  colour = Local)) +
-  geom_point(alpha = .25, size = 1.5, show.legend = F) +
-  geom_smooth(linewidth=3, method = "gam", se = F) +
-  geom_vline(aes(xintercept=39), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("AA", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
-  scale_color_manual(values = cols)+
-  ggtitle("") +
-  scale_y_continuous("", limits = c(.1,.6)) +
-  #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
-  theme_minimal() +
-  theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
-        axis.title = element_text(family = "serif", size = 48),
         axis.text = element_text(family = "serif", size = 32, hjust = 1),
-        axis.line.y = element_line(size = 2), axis.line.x = element_line(size = 2),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_line(size = 2),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_line(linewidth = 2),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_line(linewidth = 2),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -1142,7 +1034,7 @@ p1fbin3 <- CN.data %>% dplyr::select("Local", "Min", "Hfbin3") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("H", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("[0.3-12kHz]") +
   scale_y_continuous("", limits = c(0.75,1)) +
@@ -1151,8 +1043,8 @@ p1fbin3 <- CN.data %>% dplyr::select("Local", "Min", "Hfbin3") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -1166,7 +1058,7 @@ p2fbin3 <- CN.data %>% dplyr::select("Local", "Min", "ADIfbin3") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("ADI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") +
   scale_y_continuous("", limits = c(1.6,2.3)) +
@@ -1175,8 +1067,8 @@ p2fbin3 <- CN.data %>% dplyr::select("Local", "Min", "ADIfbin3") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -1190,7 +1082,7 @@ p3fbin3 <- CN.data %>% dplyr::select("Local", "Min", "AEIfbin3") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("AEI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") +
   scale_y_continuous("", limits = c(0,.6)) +
@@ -1199,8 +1091,8 @@ p3fbin3 <- CN.data %>% dplyr::select("Local", "Min", "AEIfbin3") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -1214,7 +1106,7 @@ p4fbin3 <- CN.data %>% dplyr::select("Local", "Min", "ACIfbin3") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("ACI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") +
   scale_y_continuous("", limits = c(1500,2000)) +
@@ -1223,8 +1115,8 @@ p4fbin3 <- CN.data %>% dplyr::select("Local", "Min", "ACIfbin3") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -1238,64 +1130,16 @@ p5fbin3 <- CN.data %>% dplyr::select("Local", "Min", "BAIfbin3") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("BAI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") + ylab("") +
   #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
   theme_minimal() +
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
-        axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
-        strip.text = element_text(family = "serif", size = 48),
-        legend.position = "none")
-
-p6fbin3 <- CN.data %>% dplyr::select("Local", "Min", "BGNfbin3") %>% 
-  pivot_longer(cols = BGNfbin3, names_to = "Index", values_to = "Values", values_ptypes = numeric()) %>% 
-  mutate(Index = gsub("fbin3", "", Index)) %>% 
-  ggplot(aes(Min, Values, group = Local,  colour = Local)) +
-  geom_point(alpha = .25, size = 1.5, show.legend = F) +
-  geom_smooth(linewidth=3, method = "gam", se = F) +
-  geom_vline(aes(xintercept=39), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("BGN", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
-  scale_color_manual(values = cols)+
-  ggtitle("") +
-  scale_y_continuous("", limits = c(-50,0)) +
-  #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
-  theme_minimal() +
-  theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
-        axis.title = element_text(family = "serif", size = 48),
-        axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
-        strip.text = element_text(family = "serif", size = 48),
-        legend.position = "none")
-
-p7fbin3 <- CN.data %>% dplyr::select("Local", "Min", "AAfbin3") %>% 
-  pivot_longer(cols = AAfbin3, names_to = "Index", values_to = "Values", values_ptypes = numeric()) %>% 
-  mutate(Index = gsub("fbin3", "", Index)) %>% 
-  ggplot(aes(Min, Values, group = Local,  colour = Local)) +
-  geom_point(alpha = .25, size = 1.5, show.legend = F) +
-  geom_smooth(linewidth=3, method = "gam", se = F) +
-  geom_vline(aes(xintercept=39), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("AA", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
-  scale_color_manual(values = cols)+
-  ggtitle("") +
-  scale_y_continuous("", limits = c(.1,.6)) +
-  #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
-  theme_minimal() +
-  theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
-        axis.title = element_text(family = "serif", size = 48),
         axis.text = element_text(family = "serif", size = 32, hjust = 1),
-        axis.line.y = element_line(size = 2), axis.line.x = element_line(size = 2),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_line(size = 2),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_line(linewidth = 2),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_line(linewidth = 2),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -1313,7 +1157,7 @@ p1fbin4 <- CN.data %>% dplyr::select("Local", "Min", "Hfbin4") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("H", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("[12-22.1kHz]") +
   scale_y_continuous("", limits = c(0.75,1)) +
@@ -1322,8 +1166,8 @@ p1fbin4 <- CN.data %>% dplyr::select("Local", "Min", "Hfbin4") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -1337,7 +1181,7 @@ p2fbin4 <- CN.data %>% dplyr::select("Local", "Min", "ADIfbin4") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("ADI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") +
   scale_y_continuous("", limits = c(1.6,2.3)) +
@@ -1346,8 +1190,8 @@ p2fbin4 <- CN.data %>% dplyr::select("Local", "Min", "ADIfbin4") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -1361,7 +1205,7 @@ p3fbin4 <- CN.data %>% dplyr::select("Local", "Min", "AEIfbin4") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("AEI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") +
   scale_y_continuous("", limits = c(0,.6)) +
@@ -1370,8 +1214,8 @@ p3fbin4 <- CN.data %>% dplyr::select("Local", "Min", "AEIfbin4") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -1385,7 +1229,7 @@ p4fbin4 <- CN.data %>% dplyr::select("Local", "Min", "ACIfbin4") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("ACI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") +
   scale_y_continuous("", limits = c(1500,2000)) +
@@ -1394,8 +1238,8 @@ p4fbin4 <- CN.data %>% dplyr::select("Local", "Min", "ACIfbin4") %>%
   theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
         axis.title = element_text(family = "serif", size = 48),
         axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_blank(),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_blank(),
         strip.text = element_text(family = "serif", size = 48),
         legend.position = "none")
 
@@ -1409,78 +1253,32 @@ p5fbin4 <- CN.data %>% dplyr::select("Local", "Min", "BAIfbin4") %>%
   geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
   geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("BAI", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
+  scale_x_discrete("", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
   scale_color_manual(values = cols)+
   ggtitle("") + ylab("") +
   #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
   theme_minimal() +
-  theme(title = element_text(family = "serif", size = 48), plot.title = element_text(hjust = 0.5),
-        axis.title = element_text(family = "serif", size = 48),
-        axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
-        strip.text = element_text(family = "serif", size = 48),
-        legend.position = "none")
-
-p6fbin4 <- CN.data %>% dplyr::select("Local", "Min", "BGNfbin4") %>% 
-  pivot_longer(cols = BGNfbin4, names_to = "Index", values_to = "Values", values_ptypes = numeric()) %>% 
-  mutate(Index = gsub("fbin4", "", Index)) %>% 
-  ggplot(aes(Min, Values, group = Local,  colour = Local)) +
-  geom_point(alpha = .25, size = 1.5, show.legend = F) +
-  geom_smooth(linewidth=3, method = "gam", se = F) +
-  geom_vline(aes(xintercept=39), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("BGN", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
-  scale_color_manual(values = cols)+
-  ggtitle("") +
-  scale_y_continuous("", limits = c(-50,0)) +
-  #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
-  theme_minimal() +
-  theme(axis.title = element_text(family = "serif", size = 48),
-        axis.text.y = element_text(family = "serif", size = 32, hjust = 1), axis.text.x = element_blank(),
-        axis.line.y = element_line(size = 2), axis.line.x = element_blank(),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_blank(),
-        legend.position = "none")
-
-p7fbin4 <- CN.data %>% dplyr::select("Local", "Min", "AAfbin4") %>% 
-  pivot_longer(cols = AAfbin4, names_to = "Index", values_to = "Values", values_ptypes = numeric()) %>% 
-  mutate(Index = gsub("fbin4", "", Index)) %>% 
-  ggplot(aes(Min, Values, group = Local,  colour = Local)) +
-  geom_point(alpha = .25, size = 1.5, show.legend = F) +
-  geom_smooth(linewidth=3, method = "gam", se = F) +
-  geom_vline(aes(xintercept=39), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=51), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=111), linewidth=1.2, linetype='dashed', color = "gray55") +
-  geom_vline(aes(xintercept=123), linewidth=1.2, linetype='dashed', color = "gray55") +
-  scale_x_discrete("AA", breaks=c("0","36","72", "108", "143"), labels=c("00:00", "06:00", "12:00", "18:00", "23:00")) +  
-  scale_color_manual(values = cols)+
-  ggtitle("") +
-  scale_y_continuous("", limits = c(.1,.6)) +
-  #guides(col = guide_legend(nrow = 2, byrow = TRUE))+
-  theme_minimal() +
   theme(axis.title = element_text(family = "serif", size = 48),
         axis.text = element_text(family = "serif", size = 32, hjust = 1),
-        axis.line.y = element_line(size = 2), axis.line.x = element_line(size = 2),
-        axis.ticks.y = element_line(size = 2), axis.ticks.x = element_line(size = 2),
+        axis.line.y = element_line(linewidth = 2), axis.line.x = element_line(linewidth = 2),
+        axis.ticks.y = element_line(linewidth = 2), axis.ticks.x = element_line(linewidth = 2),
         legend.position = "none")
 
 
 
-prow <- plot_grid(p1 + theme(legend.position='none'), 
-                  p1fbin1, p1fbin2, p1fbin3, p1fbin4, 
-                  p2, p2fbin1, p2fbin2, p2fbin3, p2fbin4, 
-                  p3, p3fbin1, p3fbin2, p3fbin3, p3fbin4, 
-                  p4, p4fbin1, p4fbin2, p4fbin3, p4fbin4, 
-                  p5, p5fbin1, p5fbin2, p5fbin3, p5fbin4, 
-                  p6, p6fbin1, p6fbin2, p6fbin3, p6fbin4, 
-                  p7, p7fbin1, p7fbin2, p7fbin3, p7fbin4, 
-                  ncol=5, axis = "b", align = "hv")
 
 png("results/tendency_curve_gam_all.png", width = 23.38583, height = 33.11024, units = "in", res = 300, pointsize = 4)
 
-ggdraw(plot_grid(prow, p.legend, ncol = 1, rel_heights = c(1, .05)))
+ggdraw(
+  plot_grid(p1 + theme(legend.position='none'), 
+            p1fbin1, p1fbin2, p1fbin3, p1fbin4, 
+            p2, p2fbin1, p2fbin2, p2fbin3, p2fbin4, 
+            p3, p3fbin1, p3fbin2, p3fbin3, p3fbin4, 
+            p4, p4fbin1, p4fbin2, p4fbin3, p4fbin4, 
+            p5, p5fbin1, p5fbin2, p5fbin3, p5fbin4, 
+            p6, NULL, NULL, p.legend, NULL,
+            ncol=5, axis = "b", align = "hv")
+)
 
 dev.off()
 
